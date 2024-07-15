@@ -617,7 +617,7 @@ namespace DotResolution.Libraries.Roslyns
         private static void AddBaseTypesForCSharp(TreeViewItemModel referenceModel, List<DefinitionHeaderModel> models, DefinitionHeaderModel model, SimpleBaseTypeSyntax baseType)
         {
             // 継承元の型名
-            var typeName = RemoveNamespace(baseType.ToString());
+            var typeName = baseType.ToString();
 
             // クローズドジェネリック型の場合
             var node = baseType.ChildNodes().FirstOrDefault();
@@ -633,6 +633,28 @@ namespace DotResolution.Libraries.Roslyns
             // 定義元を探す
             var targetFile = referenceModel.TargetFile;
             var baseTypeStartOffset = baseType.Span.Start;
+
+            if (typeName.Contains("::"))
+            {
+                // Xxx::Class1, Xxx::NS1.Class1 などのような記述の場合、オフセット位置を Using Alias 名前空間ではなく、最後のコンテナ系定義位置に移動させる
+                if (typeName.Contains("."))
+                {
+                    var index = typeName.LastIndexOf(".") + 1;
+                    baseTypeStartOffset += index;
+                }
+                else
+                {
+                    var index = typeName.LastIndexOf("::") + 2;
+                    baseTypeStartOffset += index;
+                }
+            }
+            else if (typeName.Contains("."))
+            {
+                // ClassLibrary1.Class1 などのような記述の場合、オフセット位置を名前空間ではなく、最後のコンテナ系定義位置に移動させる
+                var index = typeName.LastIndexOf(".") + 1;
+                baseTypeStartOffset += index;
+            }
+
             var result = FindDefinitionSourceAtPositionForCSharp(targetFile, baseTypeStartOffset);
 
             // 見つからない場合
@@ -662,6 +684,34 @@ namespace DotResolution.Libraries.Roslyns
             var candidates = CreateDefinitionTree(nextReferenceModel);
             nextReferenceModel = SearchModelForCSharp(candidates, baseTypeStartOffset);
 
+            if (nextReferenceModel == null)
+            {
+                // 見つかった先が、using alias の場合（継承元が using alias 名だった場合）
+                result = FoundIfUsingAlias(result);
+
+                // 見つからない場合
+                if (string.IsNullOrEmpty(result.Item1))
+                {
+                    var definitionType = typeName.ToLower().StartsWith("i") ? DefinitionTypes.Interface : DefinitionTypes.Class;
+                    var argument = new TreeViewItemModel { Text = typeName, DefinitionType = definitionType };
+                    var notFoundModel = CreateDefinitionHeaderModel(argument, true);
+                    notFoundModel.RelationID = model.ID;
+                    models.Add(notFoundModel);
+
+                    return;
+                }
+
+                if (referenceModel.TargetFile != result.Item1)
+                    isDifferenceFile = true;
+
+                targetFile = result.Item1;
+                baseTypeStartOffset = result.Item2;
+
+                nextReferenceModel = new TreeViewItemModel { LanguageType = referenceModel.LanguageType, TargetFile = targetFile };
+                candidates = CreateDefinitionTree(nextReferenceModel);
+                nextReferenceModel = SearchModelForCSharp(candidates, baseTypeStartOffset);
+            }
+
             var nextModel = CreateDefinitionHeaderModel(nextReferenceModel, true);
             nextModel.RelationID = model.ID;
             models.Add(nextModel);
@@ -675,6 +725,44 @@ namespace DotResolution.Libraries.Roslyns
 
             // 継承元コレクション探しとセット
             AddBaseTypesForCSharp(nextReferenceModel, models, nextModel);
+        }
+
+        private static Tuple<string, int> FoundIfUsingAlias(Tuple<string, int> result)
+        {
+            // 見つかった先が、using alias の場合（継承元が using alias 名だった場合）
+            var code = ReadAllText(result.Item1);
+            var tree = CSharpSyntaxTree.ParseText(code);
+            var root = tree.GetRoot();
+
+            for (var i = 0; i < root.DescendantNodes().Count(); i++)
+            {
+                var node = root.DescendantNodes().ElementAt(i);
+                if (node.Span.Start == result.Item2)
+                {
+                    // NameEqualsSyntax
+
+                    // +2 index after
+
+                    // QualifiedNameSyntax ClassLibrary1.Class1
+                    var syntax = root.DescendantNodes().ElementAt(i + 2);
+                    var dotSplitCount = syntax.ToString().Split('.').Length;
+
+                    // IdentifierNameSyntax Class1
+                    syntax = root.DescendantNodes().ElementAt(i + 2 + dotSplitCount);
+
+                    var offset = syntax.Span.Start;
+                    var sourceFile = result.Item1;
+
+                    var result2 = FindDefinitionSourceAtPositionForCSharp(sourceFile, offset);
+                    if (!string.IsNullOrEmpty(result2.Item1))
+                        return result2;
+                }
+
+                if (node is NamespaceDeclarationSyntax)
+                    break;
+            }
+
+            return Tuple.Create(string.Empty, -1);
         }
 
         // 指定の定義開始位置に対応するモデルを探します。
@@ -808,7 +896,7 @@ namespace DotResolution.Libraries.Roslyns
         private static void AddBaseTypesForVisualBasic(TreeViewItemModel referenceModel, List<DefinitionHeaderModel> models, DefinitionHeaderModel model, SyntaxNode baseType)
         {
             // 継承元の型名
-            var typeName = RemoveNamespace(baseType.ToString());
+            var typeName = baseType.ToString();
 
             // クローズドジェネリック型の場合
             var node = baseType.ChildNodes().FirstOrDefault();
@@ -816,7 +904,7 @@ namespace DotResolution.Libraries.Roslyns
             {
                 var listNode = node.ChildNodes().FirstOrDefault();           // TypeArgumentListSyntax
                 var genericTypes = listNode.ChildNodes();                    // PredefinedTypeSyntax, GenericNameSyntax, ...
-                typeName = $"{typeName}<{string.Join(", ", genericTypes)}>";
+                typeName = $"{typeName}(Of {string.Join(", ", genericTypes)})";
             }
 
             model.BaseTypes.Add(typeName);
@@ -824,6 +912,28 @@ namespace DotResolution.Libraries.Roslyns
             // 定義元を探す
             var targetFile = referenceModel.TargetFile;
             var baseTypeStartOffset = baseType.Span.Start;
+
+            if (typeName.Contains("::"))
+            {
+                // Xxx::Class1, Xxx::NS1.Class1 などのような記述の場合、オフセット位置を Using Alias 名前空間ではなく、最後のコンテナ系定義位置に移動させる
+                if (typeName.Contains("."))
+                {
+                    var index = typeName.LastIndexOf(".") + 1;
+                    baseTypeStartOffset += index;
+                }
+                else
+                {
+                    var index = typeName.LastIndexOf("::") + 2;
+                    baseTypeStartOffset += index;
+                }
+            }
+            else if (typeName.Contains("."))
+            {
+                // ClassLibrary1.Class1 などのような記述の場合、オフセット位置を名前空間ではなく、最後のコンテナ系定義位置に移動させる
+                var index = typeName.LastIndexOf(".") + 1;
+                baseTypeStartOffset += index;
+            }
+
             var result = FindDefinitionSourceAtPositionForVisualBasic(targetFile, baseTypeStartOffset);
 
             // 見つからない場合
@@ -853,6 +963,34 @@ namespace DotResolution.Libraries.Roslyns
             var candidates = CreateDefinitionTree(nextReferenceModel);
             nextReferenceModel = SearchModelForVisualBasic(candidates, baseTypeStartOffset);
 
+            if (nextReferenceModel == null)
+            {
+                // 見つかった先が、Imports Alias の場合（継承元が Imports Alias 名だった場合）
+                result = FoundIfImportsAlias(result);
+
+                // 見つからない場合
+                if (string.IsNullOrEmpty(result.Item1))
+                {
+                    var definitionType = typeName.ToLower().StartsWith("i") ? DefinitionTypes.Interface : DefinitionTypes.Class;
+                    var argument = new TreeViewItemModel { Text = typeName, DefinitionType = definitionType };
+                    var notFoundModel = CreateDefinitionHeaderModel(argument, true);
+                    notFoundModel.RelationID = model.ID;
+                    models.Add(notFoundModel);
+
+                    return;
+                }
+
+                if (referenceModel.TargetFile != result.Item1)
+                    isDifferenceFile = true;
+
+                targetFile = result.Item1;
+                baseTypeStartOffset = result.Item2;
+
+                nextReferenceModel = new TreeViewItemModel { LanguageType = referenceModel.LanguageType, TargetFile = targetFile };
+                candidates = CreateDefinitionTree(nextReferenceModel);
+                nextReferenceModel = SearchModelForVisualBasic(candidates, baseTypeStartOffset);
+            }
+
             var nextModel = CreateDefinitionHeaderModel(nextReferenceModel, true);
             nextModel.RelationID = model.ID;
             models.Add(nextModel);
@@ -866,6 +1004,41 @@ namespace DotResolution.Libraries.Roslyns
 
             // 継承元コレクション探しとセット
             AddBaseTypesForVisualBasic(nextReferenceModel, models, nextModel);
+        }
+
+        private static Tuple<string, int> FoundIfImportsAlias(Tuple<string, int> result)
+        {
+            // 見つかった先が、Imports Alias の場合（継承元が Imports Alias 名だった場合）
+            var code = ReadAllText(result.Item1);
+            var tree = VisualBasicSyntaxTree.ParseText(code);
+            var root = tree.GetRoot();
+
+            for (var i = 0; i < root.DescendantNodes().Count(); i++)
+            {
+                var node = root.DescendantNodes().ElementAt(i);
+                if (node.Span.Start == result.Item2)
+                {
+                    // SimpleImportsClauseSyntax
+
+                    // +2 index after
+
+                    // QualifiedNameSyntax ClassLibrary1.Class1
+                    var syntax = root.DescendantNodes().ElementAt(i + 2);
+                    var dotSplitCount = syntax.ToString().Split('.').Length;
+
+                    // IdentifierNameSyntax Class1
+                    syntax = root.DescendantNodes().ElementAt(i + 2 + dotSplitCount);
+
+                    var offset = syntax.Span.Start;
+                    var sourceFile = result.Item1;
+
+                    var result2 = FindDefinitionSourceAtPositionForVisualBasic(sourceFile, offset);
+                    if (!string.IsNullOrEmpty(result2.Item1))
+                        return result2;
+                }
+            }
+
+            return Tuple.Create(string.Empty, -1);
         }
 
         // 指定の定義開始位置に対応するモデルを探します。
@@ -1069,7 +1242,33 @@ namespace DotResolution.Libraries.Roslyns
                         var baseTypes = listNode.ChildNodes().OfType<SimpleBaseTypeSyntax>();
 
                         foreach (var baseType in baseTypes)
-                            AddInheritanceTypesForCSharp(referenceModel, models, model, targetFile, defineToken.Span.Start, baseType.Span.Start);
+                        {
+                            var baseTypeStartOffset = baseType.Span.Start;
+                            var typeName = baseType.ToString();
+
+                            if (typeName.Contains("::"))
+                            {
+                                // Xxx::Class1, Xxx::NS1.Class1 などのような記述の場合、オフセット位置を Using Alias 名前空間ではなく、最後のコンテナ系定義位置に移動させる
+                                if (typeName.Contains("."))
+                                {
+                                    var index = typeName.LastIndexOf(".") + 1;
+                                    baseTypeStartOffset += index;
+                                }
+                                else
+                                {
+                                    var index = typeName.LastIndexOf("::") + 2;
+                                    baseTypeStartOffset += index;
+                                }
+                            }
+                            else if (typeName.Contains("."))
+                            {
+                                // ClassLibrary1.Class1 などのような記述の場合、オフセット位置を名前空間ではなく、最後のコンテナ系定義位置に移動させる
+                                var index = typeName.LastIndexOf(".") + 1;
+                                baseTypeStartOffset += index;
+                            }
+
+                            AddInheritanceTypesForCSharp(referenceModel, models, model, targetFile, defineToken.Span.Start, baseTypeStartOffset);
+                        }
                     }
                 }
 
@@ -1084,7 +1283,33 @@ namespace DotResolution.Libraries.Roslyns
                         var baseTypes = listNode.ChildNodes().OfType<SimpleBaseTypeSyntax>();
 
                         foreach (var baseType in baseTypes)
-                            AddInheritanceTypesForCSharp(referenceModel, models, model, targetFile, defineToken.Span.Start, baseType.Span.Start);
+                        {
+                            var baseTypeStartOffset = baseType.Span.Start;
+                            var typeName = baseType.ToString();
+
+                            if (typeName.Contains("::"))
+                            {
+                                // Xxx::Class1, Xxx::NS1.Class1 などのような記述の場合、オフセット位置を Using Alias 名前空間ではなく、最後のコンテナ系定義位置に移動させる
+                                if (typeName.Contains("."))
+                                {
+                                    var index = typeName.LastIndexOf(".") + 1;
+                                    baseTypeStartOffset += index;
+                                }
+                                else
+                                {
+                                    var index = typeName.LastIndexOf("::") + 2;
+                                    baseTypeStartOffset += index;
+                                }
+                            }
+                            else if (typeName.Contains("."))
+                            {
+                                // ClassLibrary1.Class1 などのような記述の場合、オフセット位置を名前空間ではなく、最後のコンテナ系定義位置に移動させる
+                                var index = typeName.LastIndexOf(".") + 1;
+                                baseTypeStartOffset += index;
+                            }
+
+                            AddInheritanceTypesForCSharp(referenceModel, models, model, targetFile, defineToken.Span.Start, baseTypeStartOffset);
+                        }
                     }
                 }
             }
@@ -1124,6 +1349,37 @@ namespace DotResolution.Libraries.Roslyns
             }
             else
             {
+                // 不一致の場合、using alias を見つけてきたか？
+                result = FoundIfUsingAlias(result);
+
+                // 見つからない場合
+                if (string.IsNullOrEmpty(result.Item1))
+                    return;
+
+                // 見つかった場合、自分と候補が同じものかどうかチェック
+                if (referenceModel.TargetFile == result.Item1 && referenceModel.IdentifierTokenStartOffset == result.Item2)
+                {
+                    // 自分を継承元にしているコンテナ系定義を発見した。クラス定義かインターフェース定義を登録する
+                    var nextReferenceModel = new TreeViewItemModel { LanguageType = referenceModel.LanguageType, TargetFile = targetFile };
+                    var candidates = CreateDefinitionTree(nextReferenceModel);
+                    nextReferenceModel = SearchModelForCSharp(candidates, containerTypeStartOffset);
+
+                    var nextModel = CreateDefinitionHeaderModel(nextReferenceModel);
+                    nextModel.RelationID = model.ID;
+                    nextModel.BaseTypes.Add(referenceModel.Text);
+                    models.Add(nextModel);
+
+                    if (referenceModel.TargetFile != targetFile)
+                    {
+                        nextModel.IsDifferenceFile = true;
+                        nextModel.DifferenceFile = targetFile;
+                        nextModel.DifferenceName = Path.GetFileName(targetFile);
+                    }
+
+                    // 継承元コレクション探しとセット
+                    AddInheritanceTypesForCSharp(nextReferenceModel, models, nextModel);
+                }
+
                 return;
             }
         }
@@ -1154,7 +1410,33 @@ namespace DotResolution.Libraries.Roslyns
 
                             // Class の場合、多重継承はできない仕様だが、将来仕様変更されるか？されないと思う
                             foreach (var childNode in childNodes)
-                                AddInheritanceTypesForVisualBasic(referenceModel, models, model, targetFile, defineToken.Span.Start, childNode.Span.Start);
+                            {
+                                var baseTypeStartOffset = childNode.Span.Start;
+                                var typeName = childNode.ToString();
+
+                                if (typeName.Contains("::"))
+                                {
+                                    // Xxx::Class1, Xxx::NS1.Class1 などのような記述の場合、オフセット位置を Imports Alias 名前空間ではなく、最後のコンテナ系定義位置に移動させる
+                                    if (typeName.Contains("."))
+                                    {
+                                        var index = typeName.LastIndexOf(".") + 1;
+                                        baseTypeStartOffset += index;
+                                    }
+                                    else
+                                    {
+                                        var index = typeName.LastIndexOf("::") + 2;
+                                        baseTypeStartOffset += index;
+                                    }
+                                }
+                                else if (typeName.Contains("."))
+                                {
+                                    // ClassLibrary1.Class1 などのような記述の場合、オフセット位置を名前空間ではなく、最後のコンテナ系定義位置に移動させる
+                                    var index = typeName.LastIndexOf(".") + 1;
+                                    baseTypeStartOffset += index;
+                                }
+
+                                AddInheritanceTypesForVisualBasic(referenceModel, models, model, targetFile, defineToken.Span.Start, baseTypeStartOffset);
+                            }
                         }
 
                         if (hasImplements)
@@ -1163,7 +1445,33 @@ namespace DotResolution.Libraries.Roslyns
                             var childNodes = implementsNode.ChildNodes();
 
                             foreach (var childNode in childNodes)
-                                AddInheritanceTypesForVisualBasic(referenceModel, models, model, targetFile, defineToken.Span.Start, childNode.Span.Start);
+                            {
+                                var baseTypeStartOffset = childNode.Span.Start;
+                                var typeName = childNode.ToString();
+
+                                if (typeName.Contains("::"))
+                                {
+                                    // Xxx::Class1, Xxx::NS1.Class1 などのような記述の場合、オフセット位置を Imports Alias 名前空間ではなく、最後のコンテナ系定義位置に移動させる
+                                    if (typeName.Contains("."))
+                                    {
+                                        var index = typeName.LastIndexOf(".") + 1;
+                                        baseTypeStartOffset += index;
+                                    }
+                                    else
+                                    {
+                                        var index = typeName.LastIndexOf("::") + 2;
+                                        baseTypeStartOffset += index;
+                                    }
+                                }
+                                else if (typeName.Contains("."))
+                                {
+                                    // ClassLibrary1.Class1 などのような記述の場合、オフセット位置を名前空間ではなく、最後のコンテナ系定義位置に移動させる
+                                    var index = typeName.LastIndexOf(".") + 1;
+                                    baseTypeStartOffset += index;
+                                }
+
+                                AddInheritanceTypesForVisualBasic(referenceModel, models, model, targetFile, defineToken.Span.Start, baseTypeStartOffset);
+                            }
                         }
                     }
                 }
@@ -1187,7 +1495,33 @@ namespace DotResolution.Libraries.Roslyns
                             // Interface の場合、Inherits, IInterface1, IInterface2 などと記述する
                             // Implements ではなく Inherits でインターフェースを継承する
                             foreach (var childNode in childNodes)
-                                AddInheritanceTypesForVisualBasic(referenceModel, models, model, targetFile, defineToken.Span.Start, childNode.Span.Start);
+                            {
+                                var baseTypeStartOffset = childNode.Span.Start;
+                                var typeName = childNode.ToString();
+
+                                if (typeName.Contains("::"))
+                                {
+                                    // Xxx::Class1, Xxx::NS1.Class1 などのような記述の場合、オフセット位置を Imports Alias 名前空間ではなく、最後のコンテナ系定義位置に移動させる
+                                    if (typeName.Contains("."))
+                                    {
+                                        var index = typeName.LastIndexOf(".") + 1;
+                                        baseTypeStartOffset += index;
+                                    }
+                                    else
+                                    {
+                                        var index = typeName.LastIndexOf("::") + 2;
+                                        baseTypeStartOffset += index;
+                                    }
+                                }
+                                else if (typeName.Contains("."))
+                                {
+                                    // ClassLibrary1.Class1 などのような記述の場合、オフセット位置を名前空間ではなく、最後のコンテナ系定義位置に移動させる
+                                    var index = typeName.LastIndexOf(".") + 1;
+                                    baseTypeStartOffset += index;
+                                }
+
+                                AddInheritanceTypesForVisualBasic(referenceModel, models, model, targetFile, defineToken.Span.Start, baseTypeStartOffset);
+                            }
                         }
 
                         if (hasImplements)
@@ -1197,7 +1531,33 @@ namespace DotResolution.Libraries.Roslyns
                             var childNodes = implementsNode.ChildNodes();
 
                             foreach (var childNode in childNodes)
-                                AddInheritanceTypesForVisualBasic(referenceModel, models, model, targetFile, defineToken.Span.Start, childNode.Span.Start);
+                            {
+                                var baseTypeStartOffset = childNode.Span.Start;
+                                var typeName = childNode.ToString();
+
+                                if (typeName.Contains("::"))
+                                {
+                                    // Xxx::Class1, Xxx::NS1.Class1 などのような記述の場合、オフセット位置を Imports Alias 名前空間ではなく、最後のコンテナ系定義位置に移動させる
+                                    if (typeName.Contains("."))
+                                    {
+                                        var index = typeName.LastIndexOf(".") + 1;
+                                        baseTypeStartOffset += index;
+                                    }
+                                    else
+                                    {
+                                        var index = typeName.LastIndexOf("::") + 2;
+                                        baseTypeStartOffset += index;
+                                    }
+                                }
+                                else if (typeName.Contains("."))
+                                {
+                                    // ClassLibrary1.Class1 などのような記述の場合、オフセット位置を名前空間ではなく、最後のコンテナ系定義位置に移動させる
+                                    var index = typeName.LastIndexOf(".") + 1;
+                                    baseTypeStartOffset += index;
+                                }
+
+                                AddInheritanceTypesForVisualBasic(referenceModel, models, model, targetFile, defineToken.Span.Start, baseTypeStartOffset);
+                            }
                         }
                     }
                 }
@@ -1238,6 +1598,37 @@ namespace DotResolution.Libraries.Roslyns
             }
             else
             {
+                // 不一致の場合、Imports Alias を見つけてきたか？
+                result = FoundIfImportsAlias(result);
+
+                // 見つからない場合
+                if (string.IsNullOrEmpty(result.Item1))
+                    return;
+
+                // 見つかった場合、自分と候補が同じものかどうかチェック
+                if (referenceModel.TargetFile == result.Item1 && referenceModel.IdentifierTokenStartOffset == result.Item2)
+                {
+                    // 自分を継承元にしているコンテナ系定義を発見した。クラス定義かインターフェース定義を登録する
+                    var nextReferenceModel = new TreeViewItemModel { LanguageType = referenceModel.LanguageType, TargetFile = targetFile };
+                    var candidates = CreateDefinitionTree(nextReferenceModel);
+                    nextReferenceModel = SearchModelForVisualBasic(candidates, containerTypeStartOffset);
+
+                    var nextModel = CreateDefinitionHeaderModel(nextReferenceModel);
+                    nextModel.RelationID = model.ID;
+                    nextModel.BaseTypes.Add(referenceModel.Text);
+                    models.Add(nextModel);
+
+                    if (referenceModel.TargetFile != targetFile)
+                    {
+                        nextModel.IsDifferenceFile = true;
+                        nextModel.DifferenceFile = targetFile;
+                        nextModel.DifferenceName = Path.GetFileName(targetFile);
+                    }
+
+                    // 継承元コレクション探しとセット
+                    AddInheritanceTypesForVisualBasic(nextReferenceModel, models, nextModel);
+                }
+
                 return;
             }
         }
