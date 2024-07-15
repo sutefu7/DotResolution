@@ -22,11 +22,14 @@ DotResolution は、C# / Visual Basic のソースコードを理解するため
 - ソースファイルノードのクリックで、定義一覧ツリー、ソースコードビューア、継承元ツリー、継承先ツリー、を表示
   - 定義一覧ツリーの各ノードをクリックで、ソースコードビューアの各定義位置へ表示移動
     - この時、ノードの種類が Class / Struct / Interface の場合、継承元ツリー、継承先ツリー、を表示更新
-    - 継承元ツリーはクラス図のような見た目で、ソースファイル間・クラス間の関係性を知ることができます。リンクのソースファイル名をクリックすることで、新しいタブでそのソース情報を確認することができます。見慣れない時期は、行ったり来たりして何度も見ることが大切です。継承先ツリーも同様です。
+    - 継承元ツリーはクラス図のような見た目で、ソースファイル間・クラス間の関係性を横断して知ることができます。リンクのソースファイル名をクリックすることで、新しいタブでそのソース情報を確認することができます。見慣れない時期は、行ったり来たりして何度も見ることが大切です。継承先ツリーも同様です。
   - ソースコードビューアでは、以下の２つの機能があります。
     - 調べたい位置にキャレットを置いて、右クリックからのコンテキストメニュー「定義へ移動」をクリックすると、その定義している場所へダイレクトジャンプすることができます。
     - 「ソースコードを整形して表示」をクリックすると、最低限の C# 基準フォーマット形式で整形したソースコードビューアを別タブで表示します。
 
+# 想定する使い方
+
+ほぼ Visual Studio と同じ機能です。ただし、本ツールではソースコードを理解する際、文字列を読み進めて関係性を把握するよりも、グラフィカルな図形を見て把握する方が、理解するスピードが早いのではないかと考えています。よって、メインは Visual Studio で開いて読み進める一方で、本ルールも横に並べて補助的に見るのがベストだと考えます。
 
 # 開発環境＆動作環境
 
@@ -41,8 +44,7 @@ DotResolution は、C# / Visual Basic のソースコードを理解するため
 
 # 動作対象ソースコード
 
-.NET Framework 1.0 ～ .NET Framework 4.8 までをターゲットに作られたソースコード一式です。.NET Core 以降は未対応です。
-
+.NET Framework 1.0 ～ .NET Framework 4.8 までをターゲットに作られたソースコード一式です。.NET Core 以降は未対応です。ビルドしていなくてもソースコードがあれば表示することができます。
 
 # 利用ライブラリ
 
@@ -52,10 +54,15 @@ DotResolution は、C# / Visual Basic のソースコードを理解するため
 - ドッキングウィンドウコントロール
 
    Dirkster.AvalonDock
+   
    Dirkster.AvalonDock.Theme.Aero　※各テーマは NuGet 参照しているけど未使用
+   
    Dirkster.AvalonDock.Theme.Expression
+   
    Dirkster.AvalonDock.Theme.Metro
+   
    Dirkster.AvalonDock.Theme.VS2010
+   
    Dirkster.AvalonDock.Theme.VS2013
 
 - C#/VBのソースコードを表示するためのエディター
@@ -70,9 +77,11 @@ DotResolution は、C# / Visual Basic のソースコードを理解するため
 - C#/VB のソースコードを解析するためのライブラリ
 
    Microsoft.CodeAnalysis.CSharp
+   
    Microsoft.CodeAnalysis.CSharp.Workspaces
    
    Microsoft.CodeAnalysis.VisualBasic
+   
    Microsoft.CodeAnalysis.VisualBasic.Workspaces
    
    Microsoft.CodeAnalysis.Workspaces.MSBuild
@@ -82,6 +91,7 @@ DotResolution は、C# / Visual Basic のソースコードを理解するため
    Microsoft.CodeAnalysis.MSBuild.MSBuildWorkspace.Create() を呼び出すためには、ローカルPC参照の拡張参照で、以下２つの参照追加が必要
    
    Microsoft.Extensions.Logging
+   
    Microsoft.Extensions.Options
 
 - アイコン
