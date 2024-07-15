@@ -694,7 +694,7 @@ namespace DotResolution.Views
                     {
                         found = true;
                         var checkHeight = checkThumb.DesiredSize.Height;
-                        var candidateY = checkY + checkHeight + spaceMarginHeight;
+                        var candidateY = checkHeight + spaceMarginHeight;
                         newY += candidateY;
                     }
                 }
