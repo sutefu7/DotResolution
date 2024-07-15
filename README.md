@@ -68,7 +68,7 @@ DotResolution は、C# / Visual Basic のソースコードを理解するため
    
    Dirkster.AvalonDock.Theme.VS2013
 
-- C#/VBのソースコードを表示するためのエディター
+- C# / Visual Basic のソースコードを表示するためのエディター
 
    AvalonEdit
 
@@ -78,7 +78,7 @@ DotResolution は、C# / Visual Basic のソースコードを理解するため
    
    主に、SyntaxWalker する際に利用
 
-- C#/VB のソースコードを解析するためのライブラリ
+- C# / Visual Basic のソースコードを解析するためのライブラリ
 
    Microsoft.CodeAnalysis.CSharp
    
