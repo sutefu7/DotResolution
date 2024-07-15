@@ -1,0 +1,96 @@
+﻿<Window x:Class="DotResolution.Views.MainView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:dock="https://github.com/Dirkster99/AvalonDock"
+        xmlns:local="clr-namespace:DotResolution.Views"
+        xmlns:conv="clr-namespace:DotResolution.Converters"
+        xmlns:data="clr-namespace:DotResolution.Data"
+        mc:Ignorable="d"
+        Title="DotResolution" Height="800" Width="1200">
+
+    <Window.Resources>
+        <conv:DefinitionTypesToBitmapImageConverter x:Key="DefinitionTypesToBitmapImageConverter" />
+        <conv:DefinitionTypesToStringConverter x:Key="DefinitionTypesToStringConverter" />
+    </Window.Resources>
+    
+    <DockPanel>
+
+        <DockPanel.LayoutTransform>
+            <ScaleTransform x:Name="scaleTransform1" ScaleX="1" ScaleY="1" />
+        </DockPanel.LayoutTransform>
+        
+        <Menu DockPanel.Dock="Top">
+
+            <MenuItem Header="ファイル(_F)">
+                <MenuItem x:Name="mniSolutionFileSelector" Header="ソリューションファイルの選択...(_O)" Click="mniSolutionFileSelector_Click" />
+                <MenuItem x:Name="mniExit" Header="終了(_X)" Click="mniExit_Click" />
+            </MenuItem>
+            
+        </Menu>
+
+        <dock:DockingManager>
+            <dock:LayoutRoot>
+                <dock:LayoutPanel Orientation="Vertical">
+
+                    <dock:LayoutPanel Orientation="Horizontal">
+
+                        <dock:LayoutAnchorablePane DockWidth="200">
+                            <dock:LayoutAnchorable Title="ソリューション エクスプローラー">
+
+                                <TreeView
+                                    x:Name="solutionTree"
+                                    ItemsSource="{Binding SolutionTreeModels}"
+                                    AllowDrop="True"
+                                    DragOver="solutionTree_DragOver"
+                                    Drop="solutionTree_Drop"
+                                    SelectedItemChanged="solutionTree_SelectedItemChanged">
+
+                                    <TreeView.ItemContainerStyle>
+                                        <Style TargetType="TreeViewItem">
+                                            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+                                            <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+                                        </Style>
+                                    </TreeView.ItemContainerStyle>
+
+                                    <TreeView.ItemTemplate>
+                                        <HierarchicalDataTemplate DataType="{x:Type data:TreeViewItemModel}" ItemsSource="{Binding Children}">
+
+                                            <StackPanel Orientation="Horizontal">
+                                                <Image x:Name="ImageIcon" Source="{Binding DefinitionType, Converter={StaticResource DefinitionTypesToBitmapImageConverter}}" Margin="0,0,5,0" />
+                                                <TextBlock Text="{Binding Text}" />
+                                            </StackPanel>
+
+                                            <HierarchicalDataTemplate.Triggers>
+
+                                                <!-- フォルダを展開したら、開かれたフォルダの画像に変える -->
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsExpanded}" Value="True" />
+                                                        <Condition Binding="{Binding DefinitionType, Converter={StaticResource DefinitionTypesToStringConverter}}" Value="Folder" />
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter TargetName="ImageIcon" Property="Source" Value="/Images/Folder_Expand.png" />
+                                                </MultiDataTrigger>
+
+                                            </HierarchicalDataTemplate.Triggers>
+                                            
+                                        </HierarchicalDataTemplate>
+                                    </TreeView.ItemTemplate>
+                                    
+                                </TreeView>
+                                
+                            </dock:LayoutAnchorable>
+                        </dock:LayoutAnchorablePane>
+
+                        <dock:LayoutDocumentPane x:Name="layoutDocumentPane1" />
+
+                    </dock:LayoutPanel>
+
+                </dock:LayoutPanel>
+            </dock:LayoutRoot>
+        </dock:DockingManager>
+        
+    </DockPanel>
+    
+</Window>
