@@ -1280,7 +1280,7 @@ namespace DotResolution.Libraries.Roslyns
 
             // アセンブリファイル名
             var assemblyNameHeaderModel = new TreeViewItemModel { Text = "アセンブリファイル名", IsExpanded = true };
-            assemblyNameHeaderModel.Children.Add(new TreeViewItemModel { Text = project.AssemblyName });
+            assemblyNameHeaderModel.Children.Add(new TreeViewItemModel { Text = Path.GetFileName(project.OutputFilePath) });
             model.MemberTreeItems.Add(assemblyNameHeaderModel);
 
             // 参照 dll
