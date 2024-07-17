@@ -22,14 +22,17 @@ Visual Studio ではない本プログラムで何ができるか、何を見た
 
 ![DotResolution 使用例](https://github.com/sutefu7/DotResolution/blob/main/Docs/Images/03-source-tree-watch.gif "ソースコードを見る")
 
+<br></br>
 表示された図形のうち、リンクが表示された図形は別のソースファイルで定義されたものです。同じプロジェクト内のソースファイルか、別のプロジェクトのソースファイルです。リンクをクリックすることでその定義位置を表示します。ソースコード上で右クリックからのコンテキストメニュー「定義へ移動」をクリックすることでも定義位置を表示します。「ソースコードを整形して表示」をクリックすると、最低限の C# / Visual Basic 基準フォーマット形式で整形したソースコードビューアを別タブで表示します。
 
 ![DotResolution 使用例](https://github.com/sutefu7/DotResolution/blob/main/Docs/Images/04-source-tree-watch.gif "リンククリック、または定義へ移動でダイレクトジャンプ")
 
+<br></br>
 継承関係が大きい場合はマウスホイールを回すことで表示倍率を拡大・縮小することができます。倍率を変えると図形を見失いますが、画面右下にあるサムネイル ナビゲーター内をドラッグ移動して、図形がある位置に移動してください。
 
 ![DotResolution 使用例](https://github.com/sutefu7/DotResolution/blob/main/Docs/Images/05-source-tree-expand.gif "表示倍率の拡大・縮小")
 
+<br></br>
 4K モニターをお使いの場合などで、本プログラムの文字が小さい場合は、アプリケーション自体の表示倍率の拡大・縮小をおこないます。実行ファイルと同じ場所に自動生成される「DotResolution.cfg.txt」を開いて、「Magnification=1.0」の値を 1.5 などに書き換えてください。double 型で 0.0 ～ X.X 倍の拡大率（縮小率）という意味になります。
 
 ![DotResolution 使用例](https://github.com/sutefu7/DotResolution/blob/main/Docs/Images/06-application-expand.gif "アプリケーションの表示倍率の拡大・縮小")
@@ -116,6 +119,7 @@ Visual Studio ではない本プログラムで何ができるか、何を見た
 - サムネイル的なナビゲーター
 
    Grabacr07 様
+   
    WPF の Thumb コントロールで Photoshop のナビゲーターを再現するやつ
    https://gist.github.com/Grabacr07/988bc04fb7f16aaa4fdc
 
