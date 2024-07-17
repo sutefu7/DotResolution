@@ -5,6 +5,8 @@ DotResolution は、C# / Visual Basic のソースコードを理解するため
 
 ![DotResolution 使用例](https://github.com/sutefu7/DotResolution/blob/main/Docs/Images/01-solution-load.gif "ソリューションファイルを読み込む")
 
+<br></br>
+
 最初に、このプロジェクト一式の関係性を知ることから始めます。具体的には、各プロジェクトのプロジェクト参照を再帰的に見ることで、メインとサブの関係が分かります。
 
 ![DotResolution 使用例](https://github.com/sutefu7/DotResolution/blob/main/Docs/Images/02-solution-tree-watch.gif "プロジェクト間の参照関係図を見る")
