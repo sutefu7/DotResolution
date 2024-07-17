@@ -124,18 +124,25 @@ namespace DotResolution.Views
         /// <param name="e"></param>
         private void canvas1_MouseWheel(object sender, MouseWheelEventArgs e)
         {
-            var form = canvas1.RenderTransform as ScaleTransform;
+            var canvasForm = canvas1.RenderTransform as ScaleTransform;
+            var thumbnailForm = thumbnailRectangleVisualBrush.Transform as ScaleTransform;
             var scaleFactor = 1.1;
 
             if (e.Delta > 0)
             {
-                form.ScaleX *= scaleFactor;
-                form.ScaleY *= scaleFactor;
+                canvasForm.ScaleX *= scaleFactor;
+                canvasForm.ScaleY *= scaleFactor;
+
+                thumbnailForm.ScaleX *= scaleFactor;
+                thumbnailForm.ScaleY *= scaleFactor;
             }
             else
             {
-                form.ScaleX /= scaleFactor;
-                form.ScaleY /= scaleFactor;
+                canvasForm.ScaleX /= scaleFactor;
+                canvasForm.ScaleY /= scaleFactor;
+
+                thumbnailForm.ScaleX /= scaleFactor;
+                thumbnailForm.ScaleY /= scaleFactor;
             }
         }
 
