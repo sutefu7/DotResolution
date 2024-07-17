@@ -1213,10 +1213,12 @@ namespace DotResolution.Libraries.Roslyns
             switch (selectedModel.LanguageType)
             {
                 case LanguageTypes.CSharp:
+                    SetBaseTypesForInheritanceTypesForCSharp(selectedModel, model);
                     AddInheritanceTypesForCSharp(selectedModel, models, model);
                     break;
 
                 case LanguageTypes.VisualBasic:
+                    SetBaseTypesForInheritanceTypesForVisualBasic(selectedModel, model);
                     AddInheritanceTypesForVisualBasic(selectedModel, models, model);
                     break;
             }
@@ -1333,9 +1335,10 @@ namespace DotResolution.Libraries.Roslyns
                 nextReferenceModel = SearchModelForCSharp(candidates, containerTypeStartOffset);
 
                 var nextModel = CreateDefinitionHeaderModel(nextReferenceModel);
-                nextModel.RelationID = model.ID;
-                nextModel.BaseTypes.Add(referenceModel.Text);
                 models.Add(nextModel);
+
+                nextModel.RelationID = model.ID;
+                SetBaseTypesForInheritanceTypesForCSharp(nextReferenceModel, nextModel);
 
                 if (referenceModel.TargetFile != targetFile)
                 {
@@ -1365,9 +1368,10 @@ namespace DotResolution.Libraries.Roslyns
                     nextReferenceModel = SearchModelForCSharp(candidates, containerTypeStartOffset);
 
                     var nextModel = CreateDefinitionHeaderModel(nextReferenceModel);
-                    nextModel.RelationID = model.ID;
-                    nextModel.BaseTypes.Add(referenceModel.Text);
                     models.Add(nextModel);
+
+                    nextModel.RelationID = model.ID;
+                    SetBaseTypesForInheritanceTypesForCSharp(nextReferenceModel, nextModel);
 
                     if (referenceModel.TargetFile != targetFile)
                     {
@@ -1384,6 +1388,97 @@ namespace DotResolution.Libraries.Roslyns
             }
         }
 
+        // （呼び出し元の）referenceModel.Text だけだと、図形を見た際「継承元が１つだけ」と勘違いしてしまうため、全ての継承元を表示する
+        // ただし、継承関係図としては、すべての継承元の図形を描画する必要はない
+        private static void SetBaseTypesForInheritanceTypesForCSharp(TreeViewItemModel nextReferenceModel, DefinitionHeaderModel nextModel)
+        {
+            // Class
+            if (nextReferenceModel.DefinitionType == DefinitionTypes.Class)
+            {
+                // 継承元クラス、またはインターフェースがある場合
+                var node = nextReferenceModel.Tag as ClassDeclarationSyntax;
+                if (node.ChildNodes().OfType<BaseListSyntax>().Any())
+                {
+                    var listNode = node.ChildNodes().OfType<BaseListSyntax>().FirstOrDefault();
+                    var baseTypes = listNode.ChildNodes().OfType<SimpleBaseTypeSyntax>();
+
+                    foreach (var baseType in baseTypes)
+                    {
+                        // 継承元の型名
+                        var typeName = baseType.ToString();
+
+                        // クローズドジェネリック型の場合
+                        var genericNode = baseType.ChildNodes().FirstOrDefault();
+                        if (genericNode is Microsoft.CodeAnalysis.CSharp.Syntax.GenericNameSyntax)
+                        {
+                            var genericListNode = genericNode.ChildNodes().FirstOrDefault(); // TypeArgumentListSyntax
+                            var genericTypes = genericListNode.ChildNodes();                 // PredefinedTypeSyntax, GenericNameSyntax, ...
+                            typeName = $"{typeName}<{string.Join(", ", genericTypes)}>";
+                        }
+
+                        nextModel.BaseTypes.Add(typeName);
+                    }
+                }
+            }
+
+            // Struct
+            if (nextReferenceModel.DefinitionType == DefinitionTypes.Struct)
+            {
+                // 継承元クラス、またはインターフェースがある場合
+                var node = nextReferenceModel.Tag as StructDeclarationSyntax;
+                if (node.ChildNodes().OfType<BaseListSyntax>().Any())
+                {
+                    var listNode = node.ChildNodes().OfType<BaseListSyntax>().FirstOrDefault();
+                    var baseTypes = listNode.ChildNodes().OfType<SimpleBaseTypeSyntax>();
+
+                    foreach (var baseType in baseTypes)
+                    {
+                        // 継承元の型名
+                        var typeName = baseType.ToString();
+
+                        // クローズドジェネリック型の場合
+                        var genericNode = baseType.ChildNodes().FirstOrDefault();
+                        if (genericNode is Microsoft.CodeAnalysis.CSharp.Syntax.GenericNameSyntax)
+                        {
+                            var genericListNode = genericNode.ChildNodes().FirstOrDefault(); // TypeArgumentListSyntax
+                            var genericTypes = genericListNode.ChildNodes();                 // PredefinedTypeSyntax, GenericNameSyntax, ...
+                            typeName = $"{typeName}<{string.Join(", ", genericTypes)}>";
+                        }
+
+                        nextModel.BaseTypes.Add(typeName);
+                    }
+                }
+            }
+
+            // Interface
+            if (nextReferenceModel.DefinitionType == DefinitionTypes.Interface)
+            {
+                // 継承元クラス、またはインターフェースがある場合
+                var node = nextReferenceModel.Tag as InterfaceDeclarationSyntax;
+                if (node.ChildNodes().OfType<BaseListSyntax>().Any())
+                {
+                    var listNode = node.ChildNodes().OfType<BaseListSyntax>().FirstOrDefault();
+                    var baseTypes = listNode.ChildNodes().OfType<SimpleBaseTypeSyntax>();
+
+                    foreach (var baseType in baseTypes)
+                    {
+                        // 継承元の型名
+                        var typeName = baseType.ToString();
+
+                        // クローズドジェネリック型の場合
+                        var genericNode = baseType.ChildNodes().FirstOrDefault();
+                        if (genericNode is Microsoft.CodeAnalysis.CSharp.Syntax.GenericNameSyntax)
+                        {
+                            var genericListNode = genericNode.ChildNodes().FirstOrDefault(); // TypeArgumentListSyntax
+                            var genericTypes = genericListNode.ChildNodes();                 // PredefinedTypeSyntax, GenericNameSyntax, ...
+                            typeName = $"{typeName}<{string.Join(", ", genericTypes)}>";
+                        }
+
+                        nextModel.BaseTypes.Add(typeName);
+                    }
+                }
+            }
+        }
 
         private static void AddInheritanceTypesForVisualBasic(TreeViewItemModel referenceModel, List<DefinitionHeaderModel> models, DefinitionHeaderModel model)
         {
@@ -1582,9 +1677,10 @@ namespace DotResolution.Libraries.Roslyns
                 nextReferenceModel = SearchModelForVisualBasic(candidates, containerTypeStartOffset);
 
                 var nextModel = CreateDefinitionHeaderModel(nextReferenceModel);
-                nextModel.RelationID = model.ID;
-                nextModel.BaseTypes.Add(referenceModel.Text);
                 models.Add(nextModel);
+
+                nextModel.RelationID = model.ID;
+                SetBaseTypesForInheritanceTypesForVisualBasic(nextReferenceModel, nextModel);
 
                 if (referenceModel.TargetFile != targetFile)
                 {
@@ -1614,9 +1710,10 @@ namespace DotResolution.Libraries.Roslyns
                     nextReferenceModel = SearchModelForVisualBasic(candidates, containerTypeStartOffset);
 
                     var nextModel = CreateDefinitionHeaderModel(nextReferenceModel);
-                    nextModel.RelationID = model.ID;
-                    nextModel.BaseTypes.Add(referenceModel.Text);
                     models.Add(nextModel);
+
+                    nextModel.RelationID = model.ID;
+                    SetBaseTypesForInheritanceTypesForVisualBasic(nextReferenceModel, nextModel);
 
                     if (referenceModel.TargetFile != targetFile)
                     {
@@ -1630,6 +1727,186 @@ namespace DotResolution.Libraries.Roslyns
                 }
 
                 return;
+            }
+        }
+
+        private static void SetBaseTypesForInheritanceTypesForVisualBasic(TreeViewItemModel nextReferenceModel, DefinitionHeaderModel nextModel)
+        {
+            // Class
+            if (nextReferenceModel.DefinitionType == DefinitionTypes.Class)
+            {
+                // 継承元クラス、またはインターフェースがある場合
+                var node = nextReferenceModel.Tag as ClassBlockSyntax;
+                var hasInherits = node.ChildNodes().OfType<InheritsStatementSyntax>().Any();
+                var hasImplements = node.ChildNodes().OfType<ImplementsStatementSyntax>().Any();
+                if (hasInherits || hasImplements)
+                {
+                    if (hasInherits)
+                    {
+                        var inheritsNode = node.ChildNodes().OfType<InheritsStatementSyntax>().FirstOrDefault();
+                        var childNodes = inheritsNode.ChildNodes();
+
+                        // Class の場合、多重継承はできない仕様だが、将来仕様変更されるか？されないと思う
+                        foreach (var childNode in childNodes)
+                        {
+                            // 継承元の型名
+                            var typeName = childNode.ToString();
+
+                            // クローズドジェネリック型の場合
+                            var genericNode = childNode.ChildNodes().FirstOrDefault();
+                            if (genericNode is Microsoft.CodeAnalysis.VisualBasic.Syntax.GenericNameSyntax)
+                            {
+                                var listNode = genericNode.ChildNodes().FirstOrDefault(); // TypeArgumentListSyntax
+                                var genericTypes = listNode.ChildNodes();                 // PredefinedTypeSyntax, GenericNameSyntax, ...
+                                typeName = $"{typeName}(Of {string.Join(", ", genericTypes)})";
+                            }
+
+                            nextModel.BaseTypes.Add(typeName);
+                        }
+                    }
+
+                    if (hasImplements)
+                    {
+                        var implementsNode = node.ChildNodes().OfType<ImplementsStatementSyntax>().FirstOrDefault();
+                        var childNodes = implementsNode.ChildNodes();
+
+                        foreach (var childNode in childNodes)
+                        {
+                            // 継承元の型名
+                            var typeName = childNode.ToString();
+
+                            // クローズドジェネリック型の場合
+                            var genericNode = childNode.ChildNodes().FirstOrDefault();
+                            if (genericNode is Microsoft.CodeAnalysis.VisualBasic.Syntax.GenericNameSyntax)
+                            {
+                                var listNode = genericNode.ChildNodes().FirstOrDefault(); // TypeArgumentListSyntax
+                                var genericTypes = listNode.ChildNodes();                 // PredefinedTypeSyntax, GenericNameSyntax, ...
+                                typeName = $"{typeName}(Of {string.Join(", ", genericTypes)})";
+                            }
+
+                            nextModel.BaseTypes.Add(typeName);
+                        }
+                    }
+                }
+            }
+
+            // Struct
+            if (nextReferenceModel.DefinitionType == DefinitionTypes.Struct)
+            {
+                // 継承元クラス、またはインターフェースがある場合
+                var node = nextReferenceModel.Tag as StructureBlockSyntax;
+                var hasInherits = node.ChildNodes().OfType<InheritsStatementSyntax>().Any();
+                var hasImplements = node.ChildNodes().OfType<ImplementsStatementSyntax>().Any();
+                if (hasInherits || hasImplements)
+                {
+                    if (hasInherits)
+                    {
+                        // Struct の場合、継承ができないから以下はありえないのだが、将来仕様変更されるか？されないと思う
+                        var inheritsNode = node.ChildNodes().OfType<InheritsStatementSyntax>().FirstOrDefault();
+                        var childNodes = inheritsNode.ChildNodes();
+
+                        // Struct の場合、多重継承はできない仕様だが、将来仕様変更されるか？されないと思う
+                        foreach (var childNode in childNodes)
+                        {
+                            // 継承元の型名
+                            var typeName = childNode.ToString();
+
+                            // クローズドジェネリック型の場合
+                            var genericNode = childNode.ChildNodes().FirstOrDefault();
+                            if (genericNode is Microsoft.CodeAnalysis.VisualBasic.Syntax.GenericNameSyntax)
+                            {
+                                var listNode = genericNode.ChildNodes().FirstOrDefault(); // TypeArgumentListSyntax
+                                var genericTypes = listNode.ChildNodes();                 // PredefinedTypeSyntax, GenericNameSyntax, ...
+                                typeName = $"{typeName}(Of {string.Join(", ", genericTypes)})";
+                            }
+
+                            nextModel.BaseTypes.Add(typeName);
+                        }
+                    }
+
+                    if (hasImplements)
+                    {
+                        var implementsNode = node.ChildNodes().OfType<ImplementsStatementSyntax>().FirstOrDefault();
+                        var childNodes = implementsNode.ChildNodes();
+
+                        foreach (var childNode in childNodes)
+                        {
+                            // 継承元の型名
+                            var typeName = childNode.ToString();
+
+                            // クローズドジェネリック型の場合
+                            var genericNode = childNode.ChildNodes().FirstOrDefault();
+                            if (genericNode is Microsoft.CodeAnalysis.VisualBasic.Syntax.GenericNameSyntax)
+                            {
+                                var listNode = genericNode.ChildNodes().FirstOrDefault(); // TypeArgumentListSyntax
+                                var genericTypes = listNode.ChildNodes();                 // PredefinedTypeSyntax, GenericNameSyntax, ...
+                                typeName = $"{typeName}(Of {string.Join(", ", genericTypes)})";
+                            }
+
+                            nextModel.BaseTypes.Add(typeName);
+                        }
+                    }
+                }
+            }
+
+            // Interface
+            if (nextReferenceModel.DefinitionType == DefinitionTypes.Interface)
+            {
+                // 継承元クラス、またはインターフェースがある場合
+                var node = nextReferenceModel.Tag as InterfaceBlockSyntax;
+                var hasInherits = node.ChildNodes().OfType<InheritsStatementSyntax>().Any();
+                var hasImplements = node.ChildNodes().OfType<ImplementsStatementSyntax>().Any();
+                if (hasInherits || hasImplements)
+                {
+                    if (hasInherits)
+                    {
+                        var inheritsNode = node.ChildNodes().OfType<InheritsStatementSyntax>().FirstOrDefault();
+                        var childNodes = inheritsNode.ChildNodes();
+
+                        // Interface の場合、Inherits, IInterface1, IInterface2 などと記述する
+                        // Implements ではなく Inherits でインターフェースを継承する
+                        foreach (var childNode in childNodes)
+                        {
+                            // 継承元の型名
+                            var typeName = childNode.ToString();
+
+                            // クローズドジェネリック型の場合
+                            var genericNode = childNode.ChildNodes().FirstOrDefault();
+                            if (genericNode is Microsoft.CodeAnalysis.VisualBasic.Syntax.GenericNameSyntax)
+                            {
+                                var listNode = genericNode.ChildNodes().FirstOrDefault(); // TypeArgumentListSyntax
+                                var genericTypes = listNode.ChildNodes();                 // PredefinedTypeSyntax, GenericNameSyntax, ...
+                                typeName = $"{typeName}(Of {string.Join(", ", genericTypes)})";
+                            }
+
+                            nextModel.BaseTypes.Add(typeName);
+                        }
+                    }
+
+                    if (hasImplements)
+                    {
+                        // 上記仕様から以下はありえないのだが、将来仕様変更されるか？されないと思う
+                        var implementsNode = node.ChildNodes().OfType<ImplementsStatementSyntax>().FirstOrDefault();
+                        var childNodes = implementsNode.ChildNodes();
+
+                        foreach (var childNode in childNodes)
+                        {
+                            // 継承元の型名
+                            var typeName = childNode.ToString();
+
+                            // クローズドジェネリック型の場合
+                            var genericNode = childNode.ChildNodes().FirstOrDefault();
+                            if (genericNode is Microsoft.CodeAnalysis.VisualBasic.Syntax.GenericNameSyntax)
+                            {
+                                var listNode = genericNode.ChildNodes().FirstOrDefault(); // TypeArgumentListSyntax
+                                var genericTypes = listNode.ChildNodes();                 // PredefinedTypeSyntax, GenericNameSyntax, ...
+                                typeName = $"{typeName}(Of {string.Join(", ", genericTypes)})";
+                            }
+
+                            nextModel.BaseTypes.Add(typeName);
+                        }
+                    }
+                }
             }
         }
 
