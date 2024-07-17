@@ -25,12 +25,16 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         
-        <ScrollViewer Grid.Row="0" x:Name="scrollViewer1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+        <ScrollViewer
+            Grid.Row="0"
+            x:Name="scrollViewer1"
+            VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+            ScrollChanged="scrollViewer1_ScrollChanged">
 
             <Canvas
                 x:Name="canvas1"
-                Width="50000"
-                Height="50000"
+                Width="10000"
+                Height="10000"
                 PreviewMouseLeftButtonDown="canvas1_PreviewMouseLeftButtonDown"
                 MouseLeftButtonDown="canvas1_MouseLeftButtonDown"
                 MouseMove="canvas1_MouseMove"
@@ -52,6 +56,42 @@
             </Canvas>
 
         </ScrollViewer>
+
+        <!-- thumbnail navigator -->
+        <Canvas
+            Grid.Row="0"
+            x:Name="thumbnailNavigator1"
+            HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="30" UseLayoutRounding="True" Background="Navy"
+            Width="{Binding ElementName=thumbnailRectangle, Path=Width}" Height="{Binding ElementName=thumbnailRectangle, Path=Height}">
+
+            <!-- サムネイルとして縮小表示 -->
+            <Rectangle x:Name="thumbnailRectangle" Stroke="Blue" StrokeThickness="1" Width="100" Height="100">
+                <Rectangle.Fill>
+                    <VisualBrush Visual="{Binding ElementName=canvas1}" />
+                </Rectangle.Fill>
+            </Rectangle>
+
+            <!-- ぼかす予定だったが見づらいので、非表示 -->
+            <Path Fill="#7FFFFFFF" Visibility="Collapsed">
+                <Path.Data>
+                    <CombinedGeometry x:Name="CombinedGeometry" GeometryCombineMode="Xor">
+                        <CombinedGeometry.Geometry1>
+                            <RectangleGeometry Rect="0,0,100,100" />
+                        </CombinedGeometry.Geometry1>
+                    </CombinedGeometry>
+                </Path.Data>
+            </Path>
+
+            <!-- 表示範囲 -->
+            <Thumb x:Name="thumbnailThumb" DragDelta="thumbnailThumb_DragDelta">
+                <Thumb.Template>
+                    <ControlTemplate TargetType="Thumb">
+                        <Border BorderBrush="Red" BorderThickness="2" Background="Transparent" />
+                    </ControlTemplate>
+                </Thumb.Template>
+            </Thumb>
+
+        </Canvas>
 
         <GridSplitter Grid.Row="1" x:Name="gridSplitter1" Height="5" VerticalAlignment="Center" HorizontalAlignment="Stretch" />
 

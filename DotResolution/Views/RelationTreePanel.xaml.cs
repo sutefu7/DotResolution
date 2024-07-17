@@ -3,7 +3,6 @@ using DotResolution.Libraries;
 using DotResolution.Views.Controls;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -269,6 +268,58 @@ namespace DotResolution.Views
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// スクロールした時のイベントです。
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void scrollViewer1_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            // ExtentWidth/Height が ScrollViewer 内の広さ
+            // ViewportWidth/Height が ScrollViewer で実際に表示されているサイズ
+
+            // thumbnail navigator のうち、表示範囲の移動
+            var xfactor = thumbnailRectangle.Width / e.ExtentWidth;
+            var yfactor = thumbnailRectangle.Height / e.ExtentHeight;
+
+            var left = e.HorizontalOffset * xfactor;
+            var top = e.VerticalOffset * yfactor;
+
+            var width = e.ViewportWidth * xfactor;
+            if (width > thumbnailRectangle.Width) width = thumbnailRectangle.Width;
+
+            var height = e.ViewportHeight * yfactor;
+            if (height > thumbnailRectangle.Height) height = thumbnailRectangle.Height;
+
+            // Canvas (親パネル) 上での Thumb の位置を、Left/Top 添付プロパティで設定
+            // (XAML で言う <Thumb Canvas.Left="0" ... \> みたいなやつ)
+            Canvas.SetLeft(thumbnailThumb, left);
+            Canvas.SetTop(thumbnailThumb, top);
+
+            thumbnailThumb.Width = width;
+            thumbnailThumb.Height = height;
+            thumbnailThumb.UpdateLayout();
+
+            CombinedGeometry.Geometry2 = new RectangleGeometry(new Rect(left, top, width, height));
+        }
+
+        /// <summary>
+        /// サムネイルナビゲーターの表示範囲をドラッグ移動した時のイベントです。
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void thumbnailThumb_DragDelta(object sender, DragDeltaEventArgs e)
+        {
+            var x = e.HorizontalChange * scrollViewer1.ExtentWidth / thumbnailRectangle.Width;
+            var y = e.VerticalChange * scrollViewer1.ExtentHeight / thumbnailRectangle.Height;
+
+            x += scrollViewer1.HorizontalOffset;
+            y += scrollViewer1.VerticalOffset;
+
+            scrollViewer1.ScrollToHorizontalOffset(x);
+            scrollViewer1.ScrollToVerticalOffset(y);
         }
 
         /// <summary>
