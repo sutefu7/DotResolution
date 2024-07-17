@@ -6,11 +6,11 @@ DotResolution は、C# / Visual Basic のソースコードを理解するため
 ![DotResolution 使用例](https://github.com/sutefu7/DotResolution/blob/main/Docs/Images/01-solution-load.gif "ソリューションファイルを読み込む")
 
 <br></br>
-
 最初に、このプロジェクト一式の関係性を知ることから始めます。具体的には、各プロジェクトのプロジェクト参照を再帰的に見ることで、メインとサブの関係が分かります。
 
 ![DotResolution 使用例](https://github.com/sutefu7/DotResolution/blob/main/Docs/Images/02-solution-tree-watch.gif "プロジェクト間の参照関係図を見る")
 
+<br></br>
 次に見るのはソースコードです。ソースコードを読んでもよくわからんの場合は、Visual Studio などでデバッグしてステップ実行して、ソースコード内を歩き回ること、生きたデータのライフサイクルを見ること、だと思います。ソースコードを文字列のかたまりではなく、ドラマの登場人物や役割のようなイメージができれば、分かってくると思います。
 
 Visual Studio ではない本プログラムで何ができるか、何を見たいか考えた結果、条件分岐やループレベルのフローチャートを表示する、継承関係図を表示することでした。
