@@ -21,6 +21,7 @@ namespace DotResolution.Views
         private RelationTreePanel projectRelationPanel = null;
         private RelationTreePanel baseTypeRelationPanel = null;
         private RelationTreePanel inheritanceTypeRelationPanel = null;
+        private RelationTreePanel bothTypeRelationPanel = null;
 
         public bool IsLoadedCompleted = false;
 
@@ -110,20 +111,25 @@ namespace DotResolution.Views
 
                     // ソースコードペイン
                     editorPanel1 = new EditorPanel();
-                    var layoutDocument3 = new LayoutDocument { Title = "ソースコード", Content = editorPanel1, };
+                    var layoutDocument3 = new LayoutDocument { Title = "ソースコード", Content = editorPanel1 };
                     categoryDocumentPane.Children.Add(layoutDocument3);
                     editorPanel1.AddFormattedSourceCodePane = AddFormattedSourceCodePane;
                     editorPanel1.SetTextFile(SelectedSolutionTreeModel.TargetFile);
 
                     // 継承元ツリーペイン
                     baseTypeRelationPanel = new RelationTreePanel { IsDisplayTreeListView = true };
-                    var layoutDocument4 = new LayoutDocument { Title = "継承元ツリー", Content = baseTypeRelationPanel, };
+                    var layoutDocument4 = new LayoutDocument { Title = "継承元ツリー", Content = baseTypeRelationPanel };
                     categoryDocumentPane.Children.Add(layoutDocument4);
 
                     // 継承先ツリーペイン
                     inheritanceTypeRelationPanel = new RelationTreePanel { IsDisplayTreeListView = true };
-                    var layoutDocument5 = new LayoutDocument { Title = "継承先ツリー", Content = inheritanceTypeRelationPanel, };
+                    var layoutDocument5 = new LayoutDocument { Title = "継承先ツリー", Content = inheritanceTypeRelationPanel };
                     categoryDocumentPane.Children.Add(layoutDocument5);
+
+                    // 継承ツリーペイン
+                    bothTypeRelationPanel = new RelationTreePanel { IsDisplayTreeListView = true };
+                    var layoutDocument6 = new LayoutDocument { Title = "継承ツリー", Content = bothTypeRelationPanel };
+                    categoryDocumentPane.Children.Add(layoutDocument6);
 
                     // ソースコードペインをアクティブ状態にする
                     layoutDocument3.IsSelected = true;
@@ -248,6 +254,10 @@ namespace DotResolution.Views
                     var inheritanceTypeModels = CreateInheritanceTypeModels(model);
                     inheritanceTypeRelationPanel.ShowData(inheritanceTypeModels);
 
+                    // 継承ツリーペイン、表示更新
+                    bothTypeRelationPanel.ShowDataForLeftSideBaseTypes(baseTypeModels);
+                    bothTypeRelationPanel.ShowDataForRightSideInheritanceTypes(inheritanceTypeModels);
+
                     break;
 
                 default:
@@ -259,6 +269,10 @@ namespace DotResolution.Views
                     // 継承先ツリーペイン、表示クリア
                     inheritanceTypeModels = new List<DefinitionHeaderModel>();
                     inheritanceTypeRelationPanel.ShowData(inheritanceTypeModels);
+
+                    // 継承ツリーペイン、表示クリア
+                    bothTypeRelationPanel.ShowDataForLeftSideBaseTypes(baseTypeModels);
+                    bothTypeRelationPanel.ShowDataForRightSideInheritanceTypes(inheritanceTypeModels);
 
                     break;
             }
@@ -276,8 +290,8 @@ namespace DotResolution.Views
 
                 // ソースコードペイン
                 var editorPanel2 = new EditorPanel();
-                var layoutDocument6 = new LayoutDocument { Title = "整形されたソースコード", Content = editorPanel2, };
-                categoryDocumentPane.Children.Insert(1, layoutDocument6);
+                var layoutDocument7 = new LayoutDocument { Title = "整形されたソースコード", Content = editorPanel2, };
+                categoryDocumentPane.Children.Insert(1, layoutDocument7);
                 editorPanel2.IsFormattedSourceCodePane = true;
                 editorPanel2.SetTextFile(tmpFile);
             }

@@ -3,6 +3,7 @@ using DotResolution.Libraries;
 using DotResolution.Views.Controls;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -353,6 +354,7 @@ namespace DotResolution.Views
                 textBlock1.ToolTip = model.DifferenceFile;
                 textBlock1.Tag = model;
                 textBlock1.PreviewMouseLeftButtonDown += TextBlock1_PreviewMouseLeftButtonDown;
+                thumb1.UpdateLayout();
             }
 
             return thumb1;
@@ -500,9 +502,7 @@ namespace DotResolution.Views
                  * 
                  */
 
-                throw new InvalidOperationException("RelationTreePanel.xaml.cs / SetNewThumbLocation(), 303 行目");
-
-
+                throw new InvalidOperationException("RelationTreePanel.xaml.cs / SetNewThumbLocation()");
             }
         }
 
@@ -714,7 +714,323 @@ namespace DotResolution.Views
         // 矢印コントロールを Canvas に追加して、指定の Thumb コントロール２つにつなげる
         private void ConnectArrowControl(Thumb relationThumb, Thumb newThumb)
         {
+            var model = newThumb.DataContext as DefinitionHeaderModel;
+            var arrow1 = new Arrow
+            {
+                Stroke = Brushes.LightPink,
+                Fill = Brushes.LightPink,
 
+                IsArrowDirectionEnd = model.IsArrowDirectionEnd,
+                StartThumb = relationThumb,
+                EndThumb = newThumb,
+            };
+
+            canvas1.Children.Add(arrow1);
+
+            // newThumb 矢印の位置が左上になってしまうバグの対応。幅と高さを更新させる
+            newThumb.UpdateLayout();
+            arrow1.UpdateLocation();
+        }
+
+        /// <summary>
+        /// 指定のコレクションを、左側に向かって表示します。
+        /// </summary>
+        /// <param name="baseTypeModels"></param>
+        public void ShowDataForLeftSideBaseTypes(List<DefinitionHeaderModel> baseTypeModels)
+        {
+            //
+            if (IsDisplayTreeListView)
+            {
+                gridSplitter1.Visibility = Visibility.Visible;
+                treeListView1.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                gridSplitter1.Visibility = Visibility.Collapsed;
+                treeListView1.Visibility = Visibility.Collapsed;
+            }
+
+            // 表示範囲を中央に移動する（Canvas の中央位置までスクロールする）
+            var viewX = canvas1.Width / 2;
+            var viewY = canvas1.Height / 2;
+
+            scrollViewer1.ScrollToHorizontalOffset(viewX);
+            scrollViewer1.ScrollToVerticalOffset(viewY);
+
+            // 厳密に言うと表示範囲の中央位置ではなく左上位置が(中央位置）となるので、多少ずれているが分かりやすく考えられるため、このままとする
+
+            //
+            canvas1.Children.Clear();
+
+            foreach (var baseTypeModel in baseTypeModels)
+                ShowDataForLeftSideBaseTypes(baseTypeModel);
+        }
+
+        private void ShowDataForLeftSideBaseTypes(DefinitionHeaderModel model)
+        {
+            // コントロールを作成
+            var newThumb = CreateControl(model);
+
+            // 関連付けたい相手のコントロールがあれば、取得しておく
+            var relationThumb = canvas1.Children.OfType<Thumb>().FirstOrDefault(x =>
+            {
+                var candidateModel = x.DataContext as DefinitionHeaderModel;
+                return (candidateModel != null && candidateModel.ID == model.RelationID);
+            });
+
+            // コントロールを登録
+            canvas1.Children.Add(newThumb);
+
+            // コントロールの表示位置をセット
+            SetNewThumbLocationForLeftSideBaseTypes(relationThumb, newThumb);
+
+            // 関連付けたい相手と線でつなげる
+            if (relationThumb == null)
+                return;
+
+            ConnectArrowControlForLeftSideBaseTypes(relationThumb, newThumb);
+        }
+
+        private void SetNewThumbLocationForLeftSideBaseTypes(Thumb relationThumb, Thumb newThumb)
+        {
+            // コレクションの１つ目の Thumb の場合
+            if (relationThumb == null && canvas1.Children.Count == 1)
+            {
+                // ShowDataForLeftSideBaseTypes(List<DefinitionHeaderModel> baseTypeModels) の処理内で、
+                // canvas1 の中央位置を表示している（厳密に言うと表示範囲の中央位置ではなく左上位置が(中央位置））
+
+                // newThumb を表示範囲の中央上位置に表示する
+
+                // 表示範囲の左上位置を取得
+                var x = scrollViewer1.HorizontalOffset;
+                var y = scrollViewer1.VerticalOffset;
+
+                // 表示範囲の中央上になるように加算
+                x += scrollViewer1.ActualWidth / 2;
+                //y += scrollViewer1.ActualHeight / 2;
+
+                // コントロールの半分のサイズ分、引き算
+                newThumb.UpdateLayout();
+                x -= newThumb.DesiredSize.Width / 2;
+                //y -= newThumb.DesiredSize.Height / 2;
+                y += 10;
+
+                var pos = new Point(x, y);
+                Canvas.SetLeft(newThumb, pos.X);
+                Canvas.SetTop(newThumb, pos.Y);
+
+                return;
+            }
+
+            // ２つ目以降の Thumb の場合
+            var relationModel = relationThumb?.DataContext as DefinitionHeaderModel;
+            var newModel = newThumb.DataContext as DefinitionHeaderModel;
+
+            if (string.IsNullOrWhiteSpace(newModel.RelationID))
+            {
+                // 通常ここには来ることは無いはず。ただ来たら以下を設定する
+
+                // 新しいプロジェクトの始まりの場合、1つ目の列に追加する
+                relationThumb = canvas1.Children.OfType<Thumb>().FirstOrDefault();
+
+                // 真下
+                var pos = GetMostBottomSideLocation(relationThumb);
+                Canvas.SetLeft(newThumb, pos.X);
+                Canvas.SetTop(newThumb, pos.Y);
+            }
+            else if (relationModel.ID == newModel.RelationID)
+            {
+                // 左隣
+                var pos = GetLeftSideLocation2(relationThumb, newThumb);
+                Canvas.SetLeft(newThumb, pos.X);
+                Canvas.SetTop(newThumb, pos.Y);
+            }
+            else
+            {
+                /*
+                 * 以下の場合
+                 * relationModel.ID != string.Empty
+                 * newModel.RelationID != string.Empty
+                 * relationModel.ID != newModel.RelationID
+                 * 
+                 */
+
+                throw new InvalidOperationException("RelationTreePanel.xaml.cs / SetNewThumbLocationForLeftSideBaseTypes()");
+            }
+        }
+
+        // 基準コントロールの左隣位置、かつすでにそこにコントロールがいた場合は、コントロールがいない位置まで真下に移動した後の位置
+        private Point GetLeftSideLocation2(Thumb targetThumb, Thumb newThumb)
+        {
+            var x = Canvas.GetLeft(targetThumb);
+            var y = Canvas.GetTop(targetThumb);
+
+            var spaceMarginWidth = 40;
+            var spaceMarginHeight = 40;
+
+            newThumb.UpdateLayout();
+            var newWidth = newThumb.DesiredSize.Width;
+            var newHeight = newThumb.DesiredSize.Height;
+
+            // 候補位置は右上位置
+            var newX = x - spaceMarginWidth;
+            var newY = y;
+
+            // 予測計算した位置に、すでに他のコントロールが配置されていないかチェック
+            // 一部が重なり合う場合、重ならないように予測位置を修正して、再度全チェック
+            // つまり、候補の左上位置の Y 座標が、全てのコントロールの表示位置左下位置の Y 座標よりも、下であること
+            var items = canvas1.Children.OfType<Thumb>();
+            var last = items.Last();
+            var found = false;
+
+            while (true)
+            {
+                // 初期化してチャレンジ、または再チャレンジ
+                found = false;
+
+                foreach (var checkThumb in items)
+                {
+                    if (checkThumb == last)
+                        continue;
+
+                    // チェック対称の図形も、右上位置を取得
+                    var checkX = Canvas.GetLeft(checkThumb);
+                    var checkY = Canvas.GetTop(checkThumb);
+
+                    checkX += checkThumb.DesiredSize.Width;
+
+                    if (newX == checkX && newY == checkY)
+                    {
+                        found = true;
+                        var checkHeight = checkThumb.DesiredSize.Height;
+                        var candidateY = checkHeight + spaceMarginHeight;
+                        newY += candidateY;
+                    }
+                }
+
+                // 既存配置しているコントロール全てに重ならなかったので、この位置で決定
+                if (!found)
+                    break;
+
+                // 見つかった場合は、１つ以上重なっていたことにより、予測位置を修正したので、
+                // もう一度コントロール全部と再チェック（２週目は修正無しなはず）
+            }
+
+            // 右上位置に戻す
+            newX -= newWidth;
+            var pos = new Point(newX, newY);
+            return pos;
+        }
+
+        // 矢印コントロールを Canvas に追加して、指定の Thumb コントロール２つにつなげる
+        private void ConnectArrowControlForLeftSideBaseTypes(Thumb relationThumb, Thumb newThumb)
+        {
+            var model = newThumb.DataContext as DefinitionHeaderModel;
+            var arrow1 = new Arrow
+            {
+                Stroke = Brushes.LightPink,
+                Fill = Brushes.LightPink,
+
+                IsArrowDirectionEnd = !model.IsArrowDirectionEnd,
+                StartThumb = newThumb,
+                EndThumb = relationThumb,
+            };
+
+            canvas1.Children.Add(arrow1);
+
+            // newThumb 矢印の位置が左上になってしまうバグの対応。幅と高さを更新させる
+            newThumb.UpdateLayout();
+            arrow1.UpdateLocation();
+        }
+
+        /// <summary>
+        /// 指定のコレクションを、右側に向かって表示します。
+        /// </summary>
+        /// <param name="inheritanceTypeModels"></param>
+        public void ShowDataForRightSideInheritanceTypes(List<DefinitionHeaderModel> inheritanceTypeModels)
+        {
+            if (!inheritanceTypeModels.Any())
+                return;
+
+            var targetThumb = canvas1.Children.OfType<Thumb>().FirstOrDefault();
+            var leftSideRoot = targetThumb.DataContext as DefinitionHeaderModel;
+
+            // 先に継承元ツリーを表示したので、Canvas.Children の１つ目は、今から追加する継承先ツリーの１つ目と同じになる。
+            // ID, BaseTypes を入れ替えて、（重複しないように）継承先ツリーの１つ目を削除する（継承元ツリーの１つ目を関係先に変える）
+            var rightSideRoot = inheritanceTypeModels[0];
+
+            foreach (var baseTypeModel in inheritanceTypeModels)
+            {
+                if (baseTypeModel.RelationID == rightSideRoot.ID)
+                    baseTypeModel.RelationID = leftSideRoot.ID;
+            }
+
+            inheritanceTypeModels.RemoveAt(0);
+
+            //
+            foreach (var model in inheritanceTypeModels)
+                ShowDataForRightSideInheritanceTypes(model);
+        }
+
+        private void ShowDataForRightSideInheritanceTypes(DefinitionHeaderModel model)
+        {
+            // コントロールを作成
+            var newThumb = CreateControl(model);
+
+            // 関連付けたい相手のコントロールがあれば、取得しておく
+            var relationThumb = canvas1.Children.OfType<Thumb>().FirstOrDefault(x =>
+            {
+                var candidateModel = x.DataContext as DefinitionHeaderModel;
+                return (candidateModel != null && candidateModel.ID == model.RelationID);
+            });
+
+            // コントロールを登録
+            canvas1.Children.Add(newThumb);
+
+            // コントロールの表示位置をセット
+            SetNewThumbLocationForRightSideInheritanceTypes(relationThumb, newThumb);
+
+            // 関連付けたい相手と線でつなげる
+            if (relationThumb == null)
+                return;
+
+            ConnectArrowControlForRightSideInheritanceTypes(relationThumb, newThumb);
+        }
+
+        private void SetNewThumbLocationForRightSideInheritanceTypes(Thumb relationThumb, Thumb newThumb)
+        {
+            //
+            var relationModel = relationThumb?.DataContext as DefinitionHeaderModel;
+            var newModel = newThumb.DataContext as DefinitionHeaderModel;
+
+            if (string.IsNullOrWhiteSpace(newModel.RelationID))
+            {
+                throw new InvalidOperationException("RelationTreePanel.xaml.cs / SetNewThumbLocationForRightSideInheritanceTypes()");
+            }
+            else if (relationModel.ID == newModel.RelationID)
+            {
+                // 右隣
+                var pos = GetRightSideLocation2(relationThumb);
+                Canvas.SetLeft(newThumb, pos.X);
+                Canvas.SetTop(newThumb, pos.Y);
+            }
+            else
+            {
+                /*
+                 * 以下の場合
+                 * relationModel.ID != string.Empty
+                 * newModel.RelationID != string.Empty
+                 * relationModel.ID != newModel.RelationID
+                 * 
+                 */
+
+                throw new InvalidOperationException("RelationTreePanel.xaml.cs / SetNewThumbLocationForRightSideInheritanceTypes()");
+            }
+        }
+
+        // 矢印コントロールを Canvas に追加して、指定の Thumb コントロール２つにつなげる
+        private void ConnectArrowControlForRightSideInheritanceTypes(Thumb relationThumb, Thumb newThumb)
+        {
             var model = newThumb.DataContext as DefinitionHeaderModel;
             var arrow1 = new Arrow
             {
