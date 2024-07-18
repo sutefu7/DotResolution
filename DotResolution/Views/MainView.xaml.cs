@@ -8,6 +8,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
+using System.Windows.Threading;
 
 namespace DotResolution.Views
 {
@@ -90,6 +91,8 @@ namespace DotResolution.Views
 
         private void Parse(string solutionFile)
         {
+            ShowStatusBarMessage("ソースコードを読み込み中 ...");
+
             var dlg = new ProgressView();
             dlg.Owner = this;
             dlg.SolutionFile = solutionFile;
@@ -99,6 +102,8 @@ namespace DotResolution.Views
                 Activate();
 
             SolutionTreeModels.Add(dlg.Result);
+
+            ShowStatusBarMessage("完了", true);
         }
 
         /// <summary>
@@ -293,5 +298,48 @@ namespace DotResolution.Views
 
             return null;
         }
+
+        /// <summary>
+        /// ステータスバーに文字列を表示します。
+        /// </summary>
+        /// <remarks>
+        /// autoClear が true の場合、表示した文字列は 3 秒後に消えます。
+        /// </remarks>
+        /// <param name="s"></param>
+        /// <param name="autoClear"></param>
+        public void ShowStatusBarMessage(string s, bool autoClear = false)
+        {
+            statusBarMessage.Text = s;
+            DoEvents();
+
+            if (autoClear)
+            {
+                Task.Run(async () =>
+                {
+                    await Task.Delay(3000);
+                    await Dispatcher.InvokeAsync(() =>
+                    {
+                        statusBarMessage.Text = string.Empty;
+                    });
+                });
+            }
+        }
+
+        // 現在メッセージ待ち行列の中にある全てのUIメッセージを処理します。
+        // https://gist.github.com/pinzolo/2814091
+
+        public static void DoEvents()
+        {
+            var frame = new DispatcherFrame();
+            var callback = new DispatcherOperationCallback(obj =>
+            {
+                (obj as DispatcherFrame).Continue = false;
+                return null;
+            });
+
+            Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, callback, frame);
+            Dispatcher.PushFrame(frame);
+        }
+
     }
 }

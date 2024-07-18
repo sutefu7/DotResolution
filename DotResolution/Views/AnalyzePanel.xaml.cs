@@ -237,6 +237,8 @@ namespace DotResolution.Views
         // ソースコードペイン、継承元ツリーペイン、継承元ツリーペイン、の表示更新
         private void UpdatePanes(TreeViewItemModel model)
         {
+            AppEnv.MainView.ShowStatusBarMessage("全てのソースコードをチェック中 ...");
+
             // ソースコードペイン、定義位置に移動する
             editorPanel1.MoveTextEditorOffset(model.StartOffset);
 
@@ -276,6 +278,8 @@ namespace DotResolution.Views
 
                     break;
             }
+
+            AppEnv.MainView.ShowStatusBarMessage("完了", true);
         }
 
         // 本メソッドは、EditorPanel 内で呼び出されます。

@@ -30,6 +30,12 @@
             
         </Menu>
 
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem>
+                <TextBlock x:Name="statusBarMessage" />
+            </StatusBarItem>
+        </StatusBar>
+        
         <dock:DockingManager>
             <dock:LayoutRoot>
                 <dock:LayoutPanel Orientation="Vertical">
