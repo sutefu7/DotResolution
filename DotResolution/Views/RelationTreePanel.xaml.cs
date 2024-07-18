@@ -747,13 +747,24 @@ namespace DotResolution.Views
                     // 
                     var checkX = Canvas.GetLeft(checkThumb);
                     var checkY = Canvas.GetTop(checkThumb);
+                    var checkHeight = checkThumb.DesiredSize.Height;
 
+                    // 候補位置に、すでに図形がいたら真下に変更する
                     if (newX == checkX && newY == checkY)
                     {
                         found = true;
-                        var checkHeight = checkThumb.DesiredSize.Height;
                         var candidateY = checkHeight + spaceMarginHeight;
                         newY += candidateY;
+                        continue;
+                    }
+
+                    // 候補位置が、右側にいる全て図形の下位置よりも高い場合は下げる
+                    checkY += checkHeight + spaceMarginHeight;
+                    if (newX < checkX && newY < checkY)
+                    {
+                        found = true;
+                        newY = checkY;
+                        continue;
                     }
                 }
 
@@ -954,15 +965,26 @@ namespace DotResolution.Views
                     // チェック対称の図形も、右上位置を取得
                     var checkX = Canvas.GetLeft(checkThumb);
                     var checkY = Canvas.GetTop(checkThumb);
+                    var checkWidth = checkThumb.DesiredSize.Width;
+                    var checkHeight = checkThumb.DesiredSize.Height;
+                    checkX += checkWidth;
 
-                    checkX += checkThumb.DesiredSize.Width;
-
+                    // 候補位置に、すでに図形がいたら真下に変更する
                     if (newX == checkX && newY == checkY)
                     {
                         found = true;
-                        var checkHeight = checkThumb.DesiredSize.Height;
                         var candidateY = checkHeight + spaceMarginHeight;
                         newY += candidateY;
+                        continue;
+                    }
+
+                    // 候補位置が、左側にいる全ての図形の下位置よりも高い場合は下げる
+                    checkY += checkHeight + spaceMarginHeight;
+                    if (checkX < newX && newY < checkY)
+                    {
+                        found = true;
+                        newY = checkY;
+                        continue;
                     }
                 }
 
