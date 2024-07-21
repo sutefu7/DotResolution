@@ -119,6 +119,15 @@ namespace DotResolution.Libraries
 
         public static MainView MainView { get; set; } = null;
 
+        /// <summary>
+        /// 継承ツリー / 図形の初期表示位置を、表示範囲の左上位置にするかどうか を取得、または設定します。
+        /// </summary>
+        /// <remarks>
+        /// true ... 表示範囲の左上位置にする（継承元のうち、一番左側の図形が左上位置に表示される）、<br></br>
+        /// false ... 表示範囲の中央上位置にする（ターゲット図形が中央表示される）
+        /// </remarks>
+        public static bool BothTypeTreeDefaultLocationIsTopLeft { get; set; } = false;
+
         #endregion
 
     }
