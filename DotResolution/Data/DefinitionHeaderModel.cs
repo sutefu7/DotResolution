@@ -13,6 +13,14 @@ namespace DotResolution.Data
     public class DefinitionHeaderModel
     {
         /// <summary>
+        /// この図形が定義一覧ツリーで選択した定義の図形かどうか を取得、または設定します。
+        /// </summary>
+        /// <remarks>
+        /// 定義一覧ツリーで選択した定義の図形なら true、関連先の派生図形なら false
+        /// </remarks>
+        public bool IsTargetDefinition { get; set; }
+
+        /// <summary>
         /// 一意の文字列 を取得、または設定します。
         /// </summary>
         public string ID { get; set; }
@@ -52,6 +60,11 @@ namespace DotResolution.Data
         /// </summary>
         public TreeViewItemModel ReferenceModel { get; set; }
 
+        /// <summary>
+        /// 定義の開始位置 を取得、または設定します。
+        /// </summary>
+        public int StartOffset { get; set; }
+
 
 
         /// <summary>
@@ -89,7 +102,7 @@ namespace DotResolution.Data
         /// <summary>
         /// 定義の開始位置 を取得、または設定します。
         /// </summary>
-        public int StartOffset { get; set; }
+        public int DifferenceFileStartOffset { get; set; }
 
 
 
@@ -113,17 +126,19 @@ namespace DotResolution.Data
         /// </summary>
         public DefinitionHeaderModel()
         {
+            IsTargetDefinition = false;
             ID = string.Empty;
             RelationID = string.Empty;
             IsArrowDirectionEnd = false;
             DefinitionName = string.Empty;
             DefinitionType = DefinitionTypes.None;
             ReferenceModel = null;
+            StartOffset = 0;
             BaseTypes = new List<string>();
             IsDifferenceFile = false;
             DifferenceName = string.Empty;
             DifferenceFile = string.Empty;
-            StartOffset = 0;
+            DifferenceFileStartOffset = 0;
             IsExpanded = false;
             MemberTreeItems = new ObservableCollection<TreeViewItemModel>();
         }
