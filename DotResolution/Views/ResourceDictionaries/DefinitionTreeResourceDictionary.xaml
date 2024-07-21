@@ -78,149 +78,215 @@
                     </Style.Triggers>
                 </Style>
             </Border.Style>
+
+            <Border BorderThickness="0.5">
+
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+
+                            <DataTrigger Binding="{Binding DefinitionType, Converter={StaticResource DefinitionTypesToStringConverter}}" Value="SolutionFile">
+                                <Setter Property="BorderBrush" Value="Black" />
+                                <Setter Property="Background" Value="LightGray" />
+                            </DataTrigger>
+
+                            <DataTrigger Binding="{Binding DefinitionType, Converter={StaticResource DefinitionTypesToStringConverter}}" Value="CSharpProjectFile">
+                                <Setter Property="BorderBrush" Value="DeepPink" />
+                                <Setter Property="Background" Value="MistyRose" />
+                            </DataTrigger>
+
+                            <DataTrigger Binding="{Binding DefinitionType, Converter={StaticResource DefinitionTypesToStringConverter}}" Value="VisualBasicProjectFile">
+                                <Setter Property="BorderBrush" Value="DeepPink" />
+                                <Setter Property="Background" Value="MistyRose" />
+                            </DataTrigger>
+
+                            <DataTrigger Binding="{Binding DefinitionType, Converter={StaticResource DefinitionTypesToStringConverter}}" Value="Class">
+                                <Setter Property="BorderBrush" Value="Blue" />
+                                <Setter Property="Background" Value="AliceBlue" />
+                            </DataTrigger>
+
+                            <DataTrigger Binding="{Binding DefinitionType, Converter={StaticResource DefinitionTypesToStringConverter}}" Value="Struct">
+                                <Setter Property="BorderBrush" Value="ForestGreen" />
+                                <Setter Property="Background" Value="Honeydew" />
+                            </DataTrigger>
+
+                            <DataTrigger Binding="{Binding DefinitionType, Converter={StaticResource DefinitionTypesToStringConverter}}" Value="Interface">
+                                <Setter Property="BorderBrush" Value="Orange" />
+                                <Setter Property="Background" Value="PapayaWhip" />
+                            </DataTrigger>
+
+                            <DataTrigger Binding="{Binding DefinitionType, Converter={StaticResource DefinitionTypesToStringConverter}}" Value="Module">
+                                <Setter Property="BorderBrush" Value="DarkViolet" />
+                                <Setter Property="Background" Value="LavenderBlush" />
+                            </DataTrigger>
+
+                            <DataTrigger Binding="{Binding DefinitionType, Converter={StaticResource DefinitionTypesToStringConverter}}" Value="Unknown">
+                                <Setter Property="BorderBrush" Value="Tomato" />
+                                <Setter Property="Background" Value="LavenderBlush" />
+                            </DataTrigger>
+
+                            <DataTrigger Binding="{Binding DefinitionType, Converter={StaticResource DefinitionTypesToStringConverter}}" Value="None">
+                                <Setter Property="BorderBrush" Value="Tomato" />
+                                <Setter Property="Background" Value="LavenderBlush" />
+                            </DataTrigger>
+
+                            <DataTrigger Binding="{Binding IsTargetDefinition}" Value="True">
+                                <Setter Property="Margin" Value="3" />
+                                <Setter Property="Padding" Value="3" />
+                            </DataTrigger>
+
+                            <DataTrigger Binding="{Binding IsTargetDefinition}" Value="False">
+                                <Setter Property="Margin" Value="0" />
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="BorderBrush" Value="Transparent" />
+                                <Setter Property="Background" Value="Transparent" />
+                            </DataTrigger>
+
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+
+                <StackPanel>
+                    <Expander IsExpanded="{Binding IsExpanded}">
+                        <Expander.Header>
+                            <Grid Margin="5,1,1,1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition />
+                                    <ColumnDefinition />
+                                    <ColumnDefinition />
+                                    <ColumnDefinition />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
+
+                                <Image Grid.Column="0" Grid.Row="0" Source="{Binding DefinitionType, Converter={StaticResource DefinitionTypesToBitmapImageConverter}}" Margin="0,0,5,0" />
+                                <TextBlock Grid.Column="1" Grid.Row="0" Text="{Binding DefinitionName}" FontWeight="Bold" />
+                                <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding DefinitionType, Converter={StaticResource DefinitionTypesToStringConverter}}" />
+
+
+
+                                <TextBlock Grid.Column="0" Grid.Row="2" Text=">>" Margin="0,5,0,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasBaseType}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <TextBlock Grid.Column="1" Grid.Row="2" Text="{Binding BaseType}" Margin="0,5,0,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasBaseType}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+
+
+                                <TextBlock Grid.Column="2" Grid.Row="0" Text=" ( ">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsDifferenceFile}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <TextBlock Grid.Column="3" Grid.Row="0" x:Name="PART_DifferenceName" Text="{Binding DifferenceName}" Foreground="Blue" TextDecorations="Underline">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsDifferenceFile}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <TextBlock Grid.Column="4" Grid.Row="0" Text=" )">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsDifferenceFile}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                            </Grid>
+                        </Expander.Header>
+
+                        <TreeView
+                            ItemsSource="{Binding MemberTreeItems}"
+                            Margin="30,10,10,10"
+                            Padding="0,10,10,10">
+
+                            <TreeView.Resources>
+
+                                <Style TargetType="TreeViewItem">
+
+                                    <Setter Property="IsExpanded" Value="{Binding IsExpanded}" />
+                                    <Setter Property="IsSelected" Value="{Binding IsSelected}" />
+
+                                    <!-- ツリーを展開した際、隣のツリーとの間の隙間を広げて、見やすくする -->
+                                    <Style.Triggers>
+                                        <Trigger Property="IsExpanded" Value="True">
+                                            <Setter Property="Margin" Value="0,0,0,10" />
+                                        </Trigger>
+                                    </Style.Triggers>
+
+                                </Style>
+
+                            </TreeView.Resources>
+
+                            <TreeView.ItemTemplate>
+                                <HierarchicalDataTemplate DataType="{x:Type data:TreeViewItemModel}" ItemsSource="{Binding Children}">
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Source="{Binding DefinitionType, Converter={StaticResource DefinitionTypesToBitmapImageConverter}}" Margin="5,0,2,0" />
+                                        <control:ColorTextBlock x:Name="PART_Text" ColorText="{Binding Text}" />
+                                    </StackPanel>
+
+                                    <HierarchicalDataTemplate.Triggers>
+
+                                        <!-- 選択されたら、文字の色を変える -->
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding IsSelected}" Value="True" />
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter TargetName="PART_Text" Property="ChangeSelectedForegroundColor" Value="True" />
+                                        </MultiDataTrigger>
+
+                                    </HierarchicalDataTemplate.Triggers>
+
+                                </HierarchicalDataTemplate>
+                            </TreeView.ItemTemplate>
+
+                        </TreeView>
+
+                    </Expander>
+                </StackPanel>
+
+            </Border>
             
-            <Border.Triggers>
-
-            </Border.Triggers>
-            
-            <StackPanel>
-                <Expander IsExpanded="{Binding IsExpanded}">
-                    <Expander.Header>
-                        <Grid Margin="5,1,1,1">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition />
-                                <ColumnDefinition />
-                                <ColumnDefinition />
-                                <ColumnDefinition />
-                                <ColumnDefinition />
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition />
-                                <RowDefinition />
-                                <RowDefinition />
-                            </Grid.RowDefinitions>
-
-                            <Image Grid.Column="0" Grid.Row="0" Source="{Binding DefinitionType, Converter={StaticResource DefinitionTypesToBitmapImageConverter}}" Margin="0,0,5,0" />
-                            <TextBlock Grid.Column="1" Grid.Row="0" Text="{Binding DefinitionName}" FontWeight="Bold" />
-                            <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding DefinitionType, Converter={StaticResource DefinitionTypesToStringConverter}}" />
-
-                            
-                            
-                            <TextBlock Grid.Column="0" Grid.Row="2" Text=">>" Margin="0,5,0,0">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding HasBaseType}" Value="False">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-
-                            <TextBlock Grid.Column="1" Grid.Row="2" Text="{Binding BaseType}" Margin="0,5,0,0">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding HasBaseType}" Value="False">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-
-
-
-                            <TextBlock Grid.Column="2" Grid.Row="0" Text=" ( ">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsDifferenceFile}" Value="False">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-
-                            <TextBlock Grid.Column="3" Grid.Row="0" x:Name="PART_DifferenceName" Text="{Binding DifferenceName}" Foreground="Blue" TextDecorations="Underline">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsDifferenceFile}" Value="False">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-
-                            <TextBlock Grid.Column="4" Grid.Row="0" Text=" )">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsDifferenceFile}" Value="False">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                            
-                        </Grid>
-                    </Expander.Header>
-
-                    <TreeView
-                        ItemsSource="{Binding MemberTreeItems}"
-                        Margin="30,10,10,10"
-                        Padding="0,10,10,10">
-
-                        <TreeView.Resources>
-
-                            <Style TargetType="TreeViewItem">
-
-                                <Setter Property="IsExpanded" Value="{Binding IsExpanded}" />
-                                <Setter Property="IsSelected" Value="{Binding IsSelected}" />
-
-                                <!-- ツリーを展開した際、隣のツリーとの間の隙間を広げて、見やすくする -->
-                                <Style.Triggers>
-                                    <Trigger Property="IsExpanded" Value="True">
-                                        <Setter Property="Margin" Value="0,0,0,10" />
-                                    </Trigger>
-                                </Style.Triggers>
-
-                            </Style>
-
-                        </TreeView.Resources>
-
-                        <TreeView.ItemTemplate>
-                            <HierarchicalDataTemplate DataType="{x:Type data:TreeViewItemModel}" ItemsSource="{Binding Children}">
-
-                                <StackPanel Orientation="Horizontal">
-                                    <Image Source="{Binding DefinitionType, Converter={StaticResource DefinitionTypesToBitmapImageConverter}}" Margin="5,0,2,0" />
-                                    <control:ColorTextBlock x:Name="PART_Text" ColorText="{Binding Text}" />
-                                </StackPanel>
-
-                                <HierarchicalDataTemplate.Triggers>
-
-                                    <!-- 選択されたら、文字の色を変える -->
-                                    <MultiDataTrigger>
-                                        <MultiDataTrigger.Conditions>
-                                            <Condition Binding="{Binding IsSelected}" Value="True" />
-                                        </MultiDataTrigger.Conditions>
-                                        <Setter TargetName="PART_Text" Property="ChangeSelectedForegroundColor" Value="True" />
-                                    </MultiDataTrigger>
-
-                                </HierarchicalDataTemplate.Triggers>
-
-                            </HierarchicalDataTemplate>
-                        </TreeView.ItemTemplate>
-
-                    </TreeView>
-                    
-                </Expander>
-            </StackPanel>
         </Border>
 
     </ControlTemplate>
