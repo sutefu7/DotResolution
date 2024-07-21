@@ -312,6 +312,44 @@ namespace DotResolution.Views
             CombinedGeometry.Geometry2 = new RectangleGeometry(new Rect(left, top, width, height));
         }
 
+        private DateTime thumbnailNavigator1_MouseLeftButtonUp_Time = DateTime.MinValue;
+        private int thumbnailNavigator1_MouseLeftButtonUp_Counter = 0;
+
+        /// <summary>
+        /// サムネイルナビゲーターの左マウスボタンを上げた時のイベントです。
+        /// </summary>
+        /// <remarks>
+        /// クリックカウントを数えておいて、MouseDoubleClick イベントを疑似的に表現しています。
+        /// </remarks>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void thumbnailNavigator1_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            thumbnailNavigator1_MouseLeftButtonUp_Counter++;
+
+            // １回目のクリック時、時間を覚えておく
+            if (thumbnailNavigator1_MouseLeftButtonUp_Counter == 1)
+                thumbnailNavigator1_MouseLeftButtonUp_Time = DateTime.Now;
+
+            // ２回目のクリック時、１回目のクリック時刻との差分をとって、360 ミリ秒以内ならダブルクリックと判断して、イベント処理する
+            var doubleClickMilliseconds = 360;
+            var difTimeSpan = DateTime.Now - thumbnailNavigator1_MouseLeftButtonUp_Time;
+            if (difTimeSpan.Milliseconds <= doubleClickMilliseconds && thumbnailNavigator1_MouseLeftButtonUp_Counter == 2)
+            {
+                ChangeDisplayTopLeftSide();
+
+                // カウンターを初期化
+                thumbnailNavigator1_MouseLeftButtonUp_Time = DateTime.MinValue;
+                thumbnailNavigator1_MouseLeftButtonUp_Counter = 0;
+            }
+            else if (thumbnailNavigator1_MouseLeftButtonUp_Counter >= 2)
+            {
+                // ２回目のクリック時にダブルクリックではなかった場合も初期化する
+                thumbnailNavigator1_MouseLeftButtonUp_Time = DateTime.MinValue;
+                thumbnailNavigator1_MouseLeftButtonUp_Counter = 0;
+            }
+        }
+
         /// <summary>
         /// サムネイルナビゲーターの表示範囲をドラッグ移動した時のイベントです。
         /// </summary>
@@ -345,6 +383,8 @@ namespace DotResolution.Views
             {
                 gridSplitter1.Visibility = Visibility.Collapsed;
                 treeListView1.Visibility = Visibility.Collapsed;
+                rootGrid.RowDefinitions.RemoveAt(2);
+                rootGrid.RowDefinitions.RemoveAt(1);
             }
 
 
@@ -509,7 +549,7 @@ namespace DotResolution.Views
             if (model == null)
                 return;
 
-            AppEnv.MainView.ShowDocumentPane(model.DifferenceFile, model.StartOffset);
+            AppEnv.MainView.ShowDocumentPane(model.DifferenceFile, model.DifferenceFileStartOffset);
 
             e.Handled = true;
         }
@@ -817,6 +857,8 @@ namespace DotResolution.Views
             {
                 gridSplitter1.Visibility = Visibility.Collapsed;
                 treeListView1.Visibility = Visibility.Collapsed;
+                rootGrid.RowDefinitions.RemoveAt(2);
+                rootGrid.RowDefinitions.RemoveAt(1);
             }
 
             // 表示範囲を中央に移動する（Canvas の中央位置までスクロールする）
@@ -1050,6 +1092,10 @@ namespace DotResolution.Views
             //
             foreach (var model in inheritanceTypeModels)
                 ShowDataForRightSideInheritanceTypes(model);
+
+            // 初期表示位置、表示範囲を左上位置に変える
+            if (AppEnv.BothTypeTreeDefaultLocationIsTopLeft)
+                ChangeDisplayTopLeftSide();
         }
 
         private void ShowDataForRightSideInheritanceTypes(DefinitionHeaderModel model)
@@ -1127,6 +1173,86 @@ namespace DotResolution.Views
             // newThumb 矢印の位置が左上になってしまうバグの対応。幅と高さを更新させる
             newThumb.UpdateLayout();
             arrow1.UpdateLocation();
+        }
+
+        // 継承ツリーだけのはずが、プロジェクト間の参照ツリー、継承元ツリー、継承先ツリー、からも使われている
+        private void ChangeDisplayTopLeftSide()
+        {
+            if (AppEnv.BothTypeTreeDefaultLocationIsTopLeft)
+            {
+                // 一番左側の図形あたりの位置が左上位置に表示されるように、スクロール位置（表示範囲）を変更
+
+                // 一番左側の位置を探す（一番左側の図形を探す ではない、一番上はこの図形、一番左はあの図形、もあり得るため）
+                var items = canvas1.Children.OfType<Thumb>();
+                var mostLeft = double.NaN;
+                var mostTop = double.NaN;
+
+                foreach (var item in items)
+                {
+                    // １つ目の図形位置をチェック基準にする
+                    if (double.IsNaN(mostLeft))
+                    {
+                        mostLeft = Canvas.GetLeft(item);
+                        mostTop = Canvas.GetTop(item);
+                        continue;
+                    }
+
+                    var checkLeft = Canvas.GetLeft(item);
+                    if (mostLeft > checkLeft)
+                        mostLeft = checkLeft;
+
+                    var checkTop = Canvas.GetTop(item);
+
+                    if (mostTop > checkTop)
+                        mostTop = checkTop;
+                }
+
+                // 左上位置そのままではなく、余白を開ける
+                mostLeft -= 10;
+                mostTop -= 10;
+
+                // 表示倍率を適用する
+                var thumbnailForm = thumbnailRectangleVisualBrush.Transform as ScaleTransform;
+                mostLeft *= thumbnailForm.ScaleX;
+                mostTop *= thumbnailForm.ScaleY;
+
+                if (mostLeft < 0)
+                    mostLeft = 0;
+
+                if (mostTop < 0)
+                    mostTop = 0;
+
+                scrollViewer1.ScrollToHorizontalOffset(mostLeft);
+                scrollViewer1.ScrollToVerticalOffset(mostTop);
+            }
+            else
+            {
+                // ターゲット図形が中央上位置に表示されるように、スクロール位置（表示範囲）を変更
+
+                var targetThumb = canvas1.Children.OfType<Thumb>()
+                    .First(x => (x.DataContext as DefinitionHeaderModel).IsTargetDefinition == true);
+
+                var centerLeft = Canvas.GetLeft(targetThumb);
+                var centerTop = Canvas.GetTop(targetThumb);
+
+                centerLeft -= scrollViewer1.ActualWidth / 2;
+                centerLeft += targetThumb.DesiredSize.Width / 2;
+                centerTop -= 10;
+
+                // 表示倍率を適用する
+                var thumbnailForm = thumbnailRectangleVisualBrush.Transform as ScaleTransform;
+                centerLeft *= thumbnailForm.ScaleX;
+                centerTop *= thumbnailForm.ScaleY;
+
+                if (centerLeft < 0)
+                    centerLeft = 0;
+
+                if (centerTop < 0)
+                    centerTop = 0;
+
+                scrollViewer1.ScrollToHorizontalOffset(centerLeft);
+                scrollViewer1.ScrollToVerticalOffset(centerTop);
+            }
         }
     }
 }

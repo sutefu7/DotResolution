@@ -17,12 +17,12 @@
         </ResourceDictionary>
     </UserControl.Resources>
     
-    <Grid>
+    <Grid x:Name="rootGrid">
 
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="150" />
         </Grid.RowDefinitions>
         
         <ScrollViewer
@@ -62,7 +62,8 @@
             Grid.Row="0"
             x:Name="thumbnailNavigator1"
             HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="30" UseLayoutRounding="True" Background="Navy"
-            Width="{Binding ElementName=thumbnailRectangle, Path=Width}" Height="{Binding ElementName=thumbnailRectangle, Path=Height}">
+            Width="{Binding ElementName=thumbnailRectangle, Path=Width}" Height="{Binding ElementName=thumbnailRectangle, Path=Height}"
+            MouseLeftButtonUp="thumbnailNavigator1_MouseLeftButtonUp">
 
             <!-- サムネイルとして縮小表示 -->
             <Rectangle x:Name="thumbnailRectangle" Stroke="Blue" StrokeThickness="1" Width="100" Height="100">
@@ -99,7 +100,7 @@
 
         <GridSplitter Grid.Row="1" x:Name="gridSplitter1" Height="5" VerticalAlignment="Center" HorizontalAlignment="Stretch" />
 
-        <control:TreeListView Grid.Row="2" x:Name="treeListView1" MinHeight="150" />
+        <control:TreeListView Grid.Row="2" x:Name="treeListView1" />
 
     </Grid>
 

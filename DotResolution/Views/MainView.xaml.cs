@@ -32,7 +32,10 @@ namespace DotResolution.Views
             // 表示倍率を取得
             var cfgFile = AppEnv.ExeFile.Replace(".exe", ".cfg.txt");
             if (!File.Exists(cfgFile))
-                File.WriteAllText(cfgFile, "Magnification=1.0");
+            {
+                File.WriteAllText(cfgFile, "Magnification=1.0\r\n");
+                File.AppendAllText(cfgFile, "BothTypeTreeDefaultLocationIsTopLeft=false\r\n");
+            }
 
             var magnification = 1.0d;
             var lines = File.ReadAllLines(cfgFile);
@@ -41,6 +44,9 @@ namespace DotResolution.Views
                 var items = line.Split('=');
                 if (items[0] == "Magnification")
                     magnification = Convert.ToDouble(items[1]);
+
+                if (items[0] == "BothTypeTreeDefaultLocationIsTopLeft")
+                    AppEnv.BothTypeTreeDefaultLocationIsTopLeft = Convert.ToBoolean(items[1]);
             }
 
             scaleTransform1.ScaleX = magnification;
