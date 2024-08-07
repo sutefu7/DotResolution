@@ -130,14 +130,7 @@ Visual Studio ではない本プログラムで何ができるか、何を見た
    図形コントロール
    
    矢印コントロール（Arrow クラス）
+   
    http://www.kanazawa-net.ne.jp/~pmansato/wpf/wpf_graph_drawtool.htm
-
-
-
-
-
-
-
-
 
 
