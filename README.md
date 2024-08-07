@@ -125,7 +125,11 @@ Visual Studio ではない本プログラムで何ができるか、何を見た
    WPF の Thumb コントロールで Photoshop のナビゲーターを再現するやつ
    https://gist.github.com/Grabacr07/988bc04fb7f16aaa4fdc
 
+- 矢印コントロール
 
+   図形コントロール
+   矢印コントロール（Arrow クラス）
+   http://www.kanazawa-net.ne.jp/~pmansato/wpf/wpf_graph_drawtool.htm
 
 
 
